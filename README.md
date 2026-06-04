@@ -60,5 +60,5 @@ cd cyber_atena
 
 ## 📦 배포
 
-`main` 브랜치에 푸시하면 GitHub Actions가 자동으로 GitHub Pages에 배포합니다
-(`.github/workflows/deploy-pages.yml`).
+GitHub Pages(Deploy from a branch / `main` 루트)로 호스팅됩니다.
+`main` 브랜치에 푸시하면 자동으로 재배포됩니다.
