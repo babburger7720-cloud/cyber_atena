@@ -1,0 +1,2150 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBER ARENA 1v1</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Oswald & Orbitron) -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Oswald:wght@500;700&family=Noto+Sans+KR:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Orbitron', sans-serif;
+            background-color: #030712;
+            overflow: hidden;
+            user-select: none;
+        }
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* Neon Glow Effects */
+        .neon-text-pink {
+            text-shadow: 0 0 5px #f43f5e, 0 0 15px #f43f5e, 0 0 30px #e11d48;
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 5px #06b6d4, 0 0 15px #06b6d4, 0 0 30px #0891b2;
+        }
+        /* Neon Borders */
+        .neon-border-pink {
+            box-shadow: 0 0 10px rgba(244, 63, 94, 0.5), inset 0 0 10px rgba(244, 63, 94, 0.3);
+            border-color: #f43f5e;
+        }
+        .neon-border-cyan {
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5), inset 0 0 10px rgba(6, 182, 212, 0.3);
+            border-color: #06b6d4;
+        }
+        /* Glitch Effect */
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        .glitch-hover:hover {
+            animation: glitch 0.15s linear infinite;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-slate-900 via-purple-950 to-slate-950">
+
+    <!-- Background Particle Canvas -->
+    <canvas id="bgParticleCanvas" class="absolute inset-0 pointer-events-none z-0"></canvas>
+
+    <!-- Game Container -->
+    <div id="gameContainer" class="relative w-full max-w-4xl h-[620px] rounded-3xl bg-slate-950/85 border-2 border-purple-500/30 backdrop-blur-md overflow-hidden flex flex-col justify-between p-6 shadow-[0_0_50px_rgba(168,85,247,0.15)] z-10">
+        
+        <!-- ================= MAIN SCREEN ================= -->
+        <div id="screenMain" class="flex-1 flex flex-col items-center justify-center text-center space-y-6">
+            <div class="space-y-3">
+                <div class="text-xs tracking-[0.3em] text-cyan-400 font-orbitron font-bold">REAL-TIME 1VS1 NEON NINJA FIGHTER</div>
+                <h1 class="text-6xl md:text-7xl font-black font-orbitron tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-pink-500 neon-text-pink">
+                    CYBER ARENA
+                </h1>
+                <p class="text-slate-400 max-w-md mx-auto text-sm">가상 네온 그리드 위에서 대결하는 사이버 닌자 결투 액션. 무기 고유의 메커니즘을 마스터하세요.</p>
+            </div>
+
+            <!-- Match Mode Selection -->
+            <div class="flex space-x-4 w-full max-w-md justify-center">
+                <button id="modeAiBtn" class="flex-1 py-4 bg-slate-900 border-2 border-cyan-500 text-cyan-400 rounded-xl font-orbitron font-bold tracking-wider transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                    VS COMPUTOR (AI)
+                </button>
+                <button id="modePvpBtn" class="flex-1 py-4 bg-slate-900 border-2 border-slate-800 text-slate-400 rounded-xl font-orbitron font-bold tracking-wider transition-all transform hover:scale-105 active:scale-95">
+                    LOCAL 2-PLAYER
+                </button>
+            </div>
+
+            <!-- Player Settings Name Inputs -->
+            <div class="w-full max-w-sm grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="block text-[10px] text-left text-slate-400 font-bold tracking-wider">P1 CYBER NINJA</label>
+                    <input type="text" id="p1NameInput" value="NINJA_1" class="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2 text-center font-orbitron text-cyan-400 focus:outline-none focus:border-cyan-500 text-sm" maxlength="10">
+                </div>
+                <div id="p2InputWrapper" class="space-y-1 opacity-50 transition-opacity">
+                    <label id="p2InputLabel" class="block text-[10px] text-left text-slate-400 font-bold tracking-wider">P2 OPPONENT (AI)</label>
+                    <input type="text" id="p2NameInput" value="CYBER_BOT" class="w-full bg-slate-900 border-2 border-slate-700 rounded-lg px-3 py-2 text-center font-orbitron text-pink-400 focus:outline-none focus:border-pink-500 text-sm" maxlength="10" disabled>
+                </div>
+            </div>
+
+            <!-- Start Button -->
+            <button id="btnStartChooseWeapon" class="glitch-hover px-12 py-4 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 rounded-xl font-orbitron text-2xl font-black tracking-widest transition-all transform hover:scale-105 active:scale-95 neon-border-pink">
+                CHOOSE WEAPON →
+            </button>
+        </div>
+
+        <!-- ================= WEAPON SELECT SCREEN ================= -->
+        <div id="screenSelect" class="hidden flex-1 flex flex-col justify-between">
+            <div class="text-center space-y-1">
+                <h2 id="selectScreenTitle" class="text-2xl font-black font-orbitron tracking-wider text-cyan-400">PLAYER 1: SELECT WEAPON</h2>
+                <p class="text-slate-400 text-xs">카타나(끝자락 정밀타격) > 활(확률형 고화력) > 해머(가드브레이크) > 카타나 상성 닌자 술법</p>
+            </div>
+
+            <!-- Weapon Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 my-auto px-4">
+                <!-- Weapon 1: Katana (Sword) -->
+                <div id="card-katana" class="weapon-card group relative bg-slate-900/60 border-2 border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-between text-center cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:bg-slate-900/95 transform hover:-translate-y-1">
+                    <div class="absolute top-2.5 right-2.5 px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 text-[9px] rounded border border-cyan-500/30 font-bold font-orbitron">SWIFT</div>
+                    
+                    <!-- Cyber Katana SVG -->
+                    <svg class="w-20 h-20 text-cyan-400 filter drop-shadow-[0_0_12px_rgba(6,182,212,0.8)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M75 15 L35 55 L38 58 L78 18 Z" fill="#ffffff" />
+                        <path d="M75 15 L35 55" stroke="#06b6d4" stroke-width="4" stroke-linecap="round" />
+                        <path d="M78 18 L38 58" stroke="#06b6d4" stroke-width="2" />
+                        <rect x="31" y="51" width="12" height="12" rx="2" transform="rotate(45 37 57)" fill="#1e293b" stroke="#06b6d4" stroke-width="2" />
+                        <circle cx="37" cy="57" r="2.5" fill="#ffffff" />
+                        <path d="M33 61 L15 79" stroke="#0f172a" stroke-width="7" stroke-linecap="round" />
+                        <path d="M33 61 L15 79" stroke="#06b6d4" stroke-width="2" stroke-dasharray="4,4" stroke-linecap="round" />
+                        <circle cx="15" cy="79" r="4.5" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5" />
+                        <path d="M75 15 L85 10 L90 12" stroke="#06b6d4" stroke-width="1" stroke-linecap="round" opacity="0.6" />
+                    </svg>
+
+                    <div class="mt-2 w-full">
+                        <h3 class="text-lg font-black font-orbitron text-cyan-400">CYBER KATANA</h3>
+                        <p class="text-[10px] text-slate-400 mb-2">검의 맨 끝자락 조준 베기 시 <b class="text-yellow-400">치명타 15 피해</b> 고정</p>
+                        <!-- Weapon Spec Info -->
+                        <div class="border-t border-slate-800/80 pt-2 text-left text-[10px] space-y-1 font-orbitron">
+                            <div class="flex justify-between"><span class="text-slate-500">DAMAGE (대미지):</span> <span class="text-cyan-400 font-bold">8 HP (정밀베기 15)</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">ATTACK SPD:</span> <span class="text-cyan-400">★★☆☆☆</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">REACH (검 사정거리):</span> <span class="text-cyan-400">★★★★☆ (85px)</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weapon 2: Bow (Ranged) -->
+                <div id="card-bow" class="weapon-card group relative bg-slate-900/60 border-2 border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-between text-center cursor-pointer transition-all duration-300 hover:border-pink-500 hover:bg-slate-900/95 transform hover:-translate-y-1">
+                    <div class="absolute top-2.5 right-2.5 px-1.5 py-0.5 bg-pink-500/20 text-pink-400 text-[9px] rounded border border-pink-500/30 font-bold font-orbitron">RANGED</div>
+                    
+                    <!-- Plasma Bow SVG -->
+                    <svg class="w-20 h-20 text-pink-500 filter drop-shadow-[0_0_12px_rgba(244,63,94,0.8)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M25 15 C45 15 75 30 75 50 C75 70 45 85 25 85" stroke="#f43f5e" stroke-width="4.5" stroke-linecap="round" />
+                        <path d="M20 20 L30 10 L45 15" stroke="#ffffff" stroke-width="1.5" />
+                        <path d="M20 80 L30 90 L45 85" stroke="#ffffff" stroke-width="1.5" />
+                        <path d="M25 15 L25 85" stroke="#ffffff" stroke-width="1.5" opacity="0.8" />
+                        <circle cx="25" cy="15" r="4.5" fill="#1e293b" stroke="#f43f5e" stroke-width="2" />
+                        <circle cx="25" cy="85" r="4.5" fill="#1e293b" stroke="#f43f5e" stroke-width="2" />
+                        <rect x="68" y="44" width="14" height="12" rx="3" fill="#0f172a" stroke="#f43f5e" stroke-width="2" />
+                        <path d="M15 50 L85 50" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" />
+                        <path d="M85 50 L73 44 M85 50 L73 56" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" />
+                        <path d="M42 22 Q58 30 65 42" stroke="#ffffff" stroke-width="1" opacity="0.5" />
+                        <path d="M42 78 Q58 70 65 58" stroke="#ffffff" stroke-width="1" opacity="0.5" />
+                    </svg>
+
+                    <div class="mt-2 w-full">
+                        <h3 class="text-lg font-black font-orbitron text-pink-500">PLASMA BOW</h3>
+                        <p class="text-[10px] text-slate-400 mb-2">20% 확률로 <b class="text-yellow-400">1.5~2.5배 치명타 화살</b> 발사 (차징 시 본체 발광)</p>
+                        <!-- Spec Info -->
+                        <div class="border-t border-slate-800/80 pt-2 text-left text-[10px] space-y-1 font-orbitron">
+                            <div class="flex justify-between"><span class="text-slate-500">DAMAGE (대미지):</span> <span class="text-pink-400 font-bold">6 HP (치명타 최대 15)</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">ATTACK SPD:</span> <span class="text-pink-400">★★★☆☆</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">REACH (화살 사정거리):</span> <span class="text-pink-400">★★★★★ (무제한)</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weapon 3: Hammer (Heavy) -->
+                <div id="card-hammer" class="weapon-card group relative bg-slate-900/60 border-2 border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-between text-center cursor-pointer transition-all duration-300 hover:border-orange-400 hover:bg-slate-900/95 transform hover:-translate-y-1">
+                    <div class="absolute top-2.5 right-2.5 px-1.5 py-0.5 bg-orange-500/20 text-orange-400 text-[9px] rounded border border-orange-500/30 font-bold font-orbitron">HEAVY</div>
+                    
+                    <!-- Gravity Hammer SVG -->
+                    <svg class="w-20 h-20 text-orange-400 filter drop-shadow-[0_0_12px_rgba(251,146,60,0.8)]" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M15 85 L58 42" stroke="#1e293b" stroke-width="7" stroke-linecap="round" />
+                        <path d="M15 85 L58 42" stroke="#fb923c" stroke-width="2" stroke-dasharray="6,4" stroke-linecap="round" />
+                        <circle cx="18" cy="82" r="5" fill="none" stroke="#fb923c" stroke-width="1.5" />
+                        <circle cx="30" cy="70" r="5" fill="none" stroke="#fb923c" stroke-width="1.5" />
+                        <g transform="translate(42,12) rotate(45)">
+                            <rect x="0" y="0" width="38" height="26" rx="5" fill="#0f172a" stroke="#fb923c" stroke-width="3" />
+                            <rect x="-10" y="4" width="10" height="7" rx="1.5" fill="#1e293b" stroke="#fb923c" stroke-width="1.5" />
+                            <rect x="-10" y="15" width="10" height="7" rx="1.5" fill="#1e293b" stroke="#fb923c" stroke-width="1.5" />
+                            <path d="M-10 7.5 L-20 7.5 L-15 4.5 Z" fill="#fb923c" opacity="0.9" />
+                            <path d="M-10 18.5 L-20 18.5 L-15 15.5 Z" fill="#fb923c" opacity="0.9" />
+                            <rect x="35" y="2" width="6" height="22" rx="1.5" fill="#ffffff" stroke="#fb923c" stroke-width="2" />
+                            <line x1="8" y1="13" x2="30" y2="13" stroke="#fbbf24" stroke-width="2.5" />
+                        </g>
+                    </svg>
+
+                    <div class="mt-2 w-full">
+                        <h3 class="text-lg font-black font-orbitron text-orange-400">GRAVITY HAMMER</h3>
+                        <p class="text-[10px] text-slate-400 mb-2">대미지가 20으로 조율되었지만 최고의 넉백을 지녔습니다.</p>
+                        <!-- Weapon Spec Info -->
+                        <div class="border-t border-slate-800/80 pt-2 text-left text-[10px] space-y-1 font-orbitron">
+                            <div class="flex justify-between"><span class="text-slate-500">DAMAGE (대미지):</span> <span class="text-orange-400 font-bold">20 HP</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">ATTACK SPD:</span> <span class="text-orange-400">★☆☆☆☆</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">REACH (충격파 범위):</span> <span class="text-orange-400">★★★★★ (90px)</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selection Navigation Footer Buttons -->
+            <div class="flex justify-between items-center px-4">
+                <button id="btnBackToMain" class="text-slate-400 hover:text-white font-orbitron font-bold text-sm transition-colors">← MAIN</button>
+                <button id="btnConfirmWeapon" class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg opacity-50 cursor-not-allowed font-orbitron font-bold text-sm tracking-wider" disabled>CONFIRM WEAPON</button>
+            </div>
+        </div>
+
+        <!-- ================= MATCHMAKING / LOADING SCREEN ================= -->
+        <div id="screenMatchmaking" class="hidden flex-1 flex flex-col items-center justify-center space-y-8">
+            <div class="relative w-32 h-32 flex items-center justify-center">
+                <div class="absolute w-full h-full rounded-full border-2 border-pink-500/20 animate-ping"></div>
+                <div class="absolute w-24 h-24 rounded-full border-2 border-pink-500/40 animate-pulse"></div>
+                <div class="absolute w-16 h-16 rounded-full border border-pink-500 flex items-center justify-center shadow-[0_0_15px_rgba(244,63,94,0.4)]">
+                    <span class="text-2xl animate-bounce">⚔️</span>
+                </div>
+            </div>
+            
+            <div class="text-center space-y-2">
+                <h3 class="text-2xl font-black font-orbitron text-pink-500 tracking-widest">LOADING ARENA GRIDS...</h3>
+                <p id="loadingTip" class="text-xs text-slate-400">A, D로 좌우 이동 / W로 점프 / F로 공격 / G로 가드 가능합니다.</p>
+                <p class="text-[11px] text-cyan-400 font-bold font-orbitron">★ NEW: A 또는 D 두 번 연속 입력 시 쾌속 [대시] 발동!</p>
+            </div>
+
+            <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-xl p-4 flex justify-between items-center font-orbitron">
+                <div class="flex flex-col items-start">
+                    <span class="text-[9px] text-slate-500">P1 CHALLENGER</span>
+                    <span id="matchP1Name" class="text-cyan-400 font-bold">---</span>
+                    <span id="matchP1Wep" class="text-[10px] text-slate-400">---</span>
+                </div>
+                <span class="text-pink-500 font-black text-xl">VS</span>
+                <div class="flex flex-col items-end">
+                    <span class="text-[9px] text-slate-500">P2 OPPONENT</span>
+                    <span id="matchP2Name" class="text-pink-400 font-bold">---</span>
+                    <span id="matchP2Wep" class="text-[10px] text-slate-400">---</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= BATTLE ARENA (CANVAS FIGHT) SCREEN ================= -->
+        <div id="screenBattle" class="hidden flex-1 flex flex-col justify-between relative">
+            <!-- HUD -->
+            <div class="grid grid-cols-2 gap-6 border-b border-slate-800 pb-3 z-10">
+                <!-- P1 HUD -->
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs">
+                        <div class="flex items-center space-x-2">
+                            <span id="hudP1Name" class="font-bold font-orbitron text-cyan-400">P1_NAME</span>
+                            <span id="hudP1Weapon" class="text-[9px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 font-orbitron">KATANA</span>
+                        </div>
+                        <!-- 수치형 체력 표시 -->
+                        <span id="hudP1HpVal" class="font-orbitron font-bold text-cyan-400 text-xs">100 / 100 HP</span>
+                    </div>
+                    <!-- HP Bar -->
+                    <div class="w-full h-3 bg-slate-950 border border-slate-800 rounded p-0.5">
+                        <div id="hudP1Hp" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded transition-all duration-75" style="width: 100%;"></div>
+                    </div>
+                    <!-- Stamina (가드 게이지) -->
+                    <div class="w-full h-1 bg-slate-950 rounded overflow-hidden">
+                        <div id="hudP1Shield" class="h-full bg-indigo-400 transition-all duration-75" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- P2 HUD -->
+                <div class="space-y-1 text-right">
+                    <div class="flex justify-between items-center text-xs flex-row-reverse">
+                        <div class="flex items-center space-x-2 flex-row-reverse">
+                            <span id="hudP2Name" class="font-bold font-orbitron text-pink-500">P2_NAME</span>
+                            <span id="hudP2Weapon" class="text-[9px] text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800 font-orbitron">BOW</span>
+                        </div>
+                        <!-- 수치형 체력 표시 -->
+                        <span id="hudP2HpVal" class="font-orbitron font-bold text-pink-500 text-xs">100 / 100 HP</span>
+                    </div>
+                    <!-- HP Bar -->
+                    <div class="w-full h-3 bg-slate-950 border border-slate-800 rounded p-0.5">
+                        <div id="hudP2Hp" class="h-full bg-gradient-to-l from-pink-500 to-rose-600 rounded transition-all duration-75" style="width: 100%;"></div>
+                    </div>
+                    <!-- Stamina (가드 게이지) -->
+                    <div class="w-full h-1 bg-slate-950 rounded overflow-hidden">
+                        <div id="hudP2Shield" class="h-full bg-indigo-400 transition-all duration-75" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 실시간 게임 캔버스 영역 -->
+            <div class="relative flex-1 bg-slate-950/60 rounded-xl my-3 border border-slate-800 overflow-hidden flex items-center justify-center shadow-inner">
+                <canvas id="battleCanvas" width="800" height="360" class="w-full h-full object-contain"></canvas>
+                
+                <!-- Countdown Overlay -->
+                <div id="battleOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-sm transition-opacity duration-300">
+                    <span id="countdownText" class="text-7xl font-black font-orbitron text-yellow-400 neon-text-pink scale-75 animate-pulse">READY</span>
+                    <span id="countdownDesc" class="text-xs text-slate-400 mt-2 font-orbitron">ROUND 1 - ARENA UNLOCKED</span>
+                </div>
+            </div>
+
+            <!-- 하단 격투 단축키 설명 가이드바 -->
+            <div class="flex justify-between items-center text-[10px] text-slate-400 bg-slate-900/50 p-2 rounded-xl border border-slate-900 font-bold">
+                <div>🔵 <span class="text-cyan-400">P1 조작:</span> <b class="text-white">A/D</b> 이동 (더블탭 대시) | <b class="text-white">W</b> 점프 | <b class="text-white">F</b> 공격 | <b class="text-white">G</b> 방어</div>
+                <div id="p2ControlGuide">🔴 <span class="text-pink-500 font-bold">P2 (AI):</span> 자동 컴퓨터 전투 연출</div>
+            </div>
+        </div>
+
+        <!-- ================= GAME OVER / RESULT SCREEN ================= -->
+        <div id="screenResult" class="hidden flex-1 flex flex-col items-center justify-center space-y-6 text-center">
+            <h2 id="resultTitle" class="text-5xl font-black font-orbitron tracking-tighter neon-text-pink animate-pulse">VICTORY</h2>
+            <div id="resultDescription" class="text-slate-400 max-w-sm text-sm">실시간 물리 연출과 피지컬 무빙의 궁극적 승리를 이뤄냈습니다!</div>
+            
+            <!-- 플레이 스탯 로그 -->
+            <div class="w-full max-w-xs bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2 text-xs font-orbitron">
+                <div class="flex justify-between"><span class="text-slate-400">WINNER</span><span id="resWinnerName" class="text-yellow-400 font-bold">P1_NAME</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">MATCH MODE</span><span id="resMatchMode" class="text-cyan-400 font-bold">VS AI</span></div>
+            </div>
+
+            <div class="flex space-x-4">
+                <button id="btnResultSelectWeapon" class="px-6 py-3 bg-slate-900 border border-slate-700 hover:bg-slate-800 rounded-lg font-orbitron font-bold transition-all text-sm">CHOOSE WEAPON</button>
+                <button id="btnResultMainMenu" class="px-6 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 rounded-lg font-orbitron font-black tracking-wider transition-all shadow-[0_0_15px_rgba(244,63,94,0.4)] text-sm">MAIN MENU</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Retro Audio Synthesizer, Real-time Battle Physics Engine, Keyboard handler -->
+    <script>
+        // ================= 1. WEAPON STATS CONFIGURATION =================
+        const weaponStats = {
+            katana: {
+                name: 'CYBER KATANA',
+                color: '#06b6d4',
+                damage: 8,      // 기본 데미지 8 고정
+                speed: 20,      // 선딜레이 프레임
+                reach: 85,      
+                height: 24,     
+                moveSpeed: 4.2,
+                jumpForce: -12.0,
+                weight: 0.50
+            },
+            bow: {
+                name: 'PLASMA BOW',
+                color: '#f43f5e',
+                damage: 6,      // 활 기본 대미지 6 고정
+                speed: 18,
+                reach: 0,       
+                height: 10,
+                moveSpeed: 3.8,
+                jumpForce: -11.0,
+                weight: 0.45
+            },
+            hammer: {
+                name: 'GRAVITY HAMMER',
+                color: '#fb923c',
+                damage: 20,      // 망치 대미지 20 고정
+                speed: 38,      
+                reach: 90,      
+                height: 35,
+                moveSpeed: 3.0,
+                jumpForce: -10.0,
+                weight: 0.60
+            }
+        };
+
+        // ================= 2. GLOBAL VARIABLES & STATE =================
+        let bgCanvas, bgCtx;
+        let bgParticles = [];
+        let bCanvas, bCtx;
+        let battleParticles = [];
+        let projectiles = []; 
+        let floatingTexts = []; 
+        let shockwavePillars = []; 
+        let p1 = null;
+        let p2 = null;
+        let gameLoopId = null;
+        let shakeFrames = 0;
+
+        const botNames = ["SHADOW_NINJA", "CYBER_HANZO", "NEON_MURAMASA", "ZERO_STRIKER", "GHOST_SHELL"];
+        const weaponKeys = ["katana", "bow", "hammer"];
+        
+        let gameState = {
+            currentScreen: 'MAIN',
+            gameMode: 'AI', 
+            p1Name: 'NINJA_1',
+            p2Name: 'CYBER_BOT',
+            p1Weapon: '',
+            p2Weapon: '',
+            selectingPlayer: 1,
+            isArenaRunning: false,
+            combatLive: false, // 카운트다운 종료(FIGHT!) 후에만 입력/충돌 활성화
+            winner: ''
+        };
+
+        const platforms = [
+            { x: 100, y: 220, w: 140, h: 10, color: 'rgba(6, 182, 212, 0.4)' }, 
+            { x: 560, y: 220, w: 140, h: 10, color: 'rgba(244, 63, 94, 0.4)' }, 
+            { x: 310, y: 140, w: 180, h: 10, color: 'rgba(168, 85, 247, 0.4)' }  
+        ];
+
+        const keys = {
+            KeyA: false, KeyD: false, KeyW: false, KeyF: false, KeyG: false,
+            ArrowLeft: false, ArrowRight: false, ArrowUp: false, KeyK: false, KeyL: false
+        };
+
+        let p1LastTapLeft = 0;
+        let p1LastTapRight = 0;
+        let p2LastTapLeft = 0;
+        let p2LastTapRight = 0;
+        const doubleTapInterval = 250; 
+
+        // ================= 3. AUDIO CONTEXT (ReferenceError 방지 최상단 배치) =================
+        let audioCtx = null;
+        function playSound(type) {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'select') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(350, now);
+                    osc.frequency.exponentialRampToValueAtTime(700, now + 0.1);
+                    gainNode.gain.setValueAtTime(0.08, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'jump') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(150, now);
+                    osc.frequency.exponentialRampToValueAtTime(450, now + 0.15);
+                    gainNode.gain.setValueAtTime(0.05, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'slash_katana') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(380, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.12, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'slash_bow') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(500, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.15);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'slash_hammer') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.exponentialRampToValueAtTime(50, now + 0.35);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'hit') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.exponentialRampToValueAtTime(30, now + 0.2);
+                    gainNode.gain.setValueAtTime(0.2, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'block') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(900, now);
+                    osc.frequency.setValueAtTime(450, now + 0.05);
+                    gainNode.gain.setValueAtTime(0.1, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'dash') { 
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.12);
+                    gainNode.gain.setValueAtTime(0.08, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'victory') {
+                    const freqs = [330, 392, 659, 523, 587, 784, 1046];
+                    freqs.forEach((f, idx) => {
+                        const sOsc = audioCtx.createOscillator();
+                        const sGain = audioCtx.createGain();
+                        sOsc.connect(sGain);
+                        sGain.connect(audioCtx.destination);
+                        sOsc.type = 'square';
+                        sOsc.frequency.setValueAtTime(f, now + (idx * 0.08));
+                        sGain.gain.setValueAtTime(0.04, now + (idx * 0.08));
+                        sGain.gain.linearRampToValueAtTime(0.001, now + (idx * 0.08) + 0.3);
+                        sOsc.start(now + (idx * 0.08));
+                        sOsc.stop(now + (idx * 0.08) + 0.3);
+                    });
+                }
+            } catch (e) {
+                console.log('Audio contextual failure bypassed.', e);
+            }
+        }
+
+        // ================= 4. UTILITY RENDERING FUNCTIONS =================
+        function drawSafeRoundRect(ctx, x, y, width, height, radius) {
+            let r = { tl: 0, tr: 0, br: 0, bl: 0 };
+            
+            if (typeof radius === 'number') {
+                r = { tl: radius, tr: radius, br: radius, bl: radius };
+            } else if (Array.isArray(radius)) {
+                r.tl = radius[0] !== undefined ? Number(radius[0]) : 0;
+                r.tr = radius[1] !== undefined ? Number(radius[1]) : (radius[0] !== undefined ? Number(radius[0]) : 0);
+                r.br = radius[2] !== undefined ? Number(radius[2]) : (radius[0] !== undefined ? Number(radius[0]) : 0);
+                r.bl = radius[3] !== undefined ? Number(radius[3]) : (radius[1] !== undefined ? Number(radius[1]) : 0);
+            } else if (radius && typeof radius === 'object') {
+                r.tl = Number(radius.tl) || 0;
+                r.tr = Number(radius.tr) || 0;
+                r.br = Number(radius.br) || 0;
+                r.bl = Number(radius.bl) || 0;
+            }
+
+            r.tl = Math.max(0, isNaN(r.tl) ? 0 : r.tl);
+            r.tr = Math.max(0, isNaN(r.tr) ? 0 : r.tr);
+            r.br = Math.max(0, isNaN(r.br) ? 0 : r.br);
+            r.bl = Math.max(0, isNaN(r.bl) ? 0 : r.bl);
+
+            ctx.beginPath();
+            ctx.moveTo(x + r.tl, y);
+            ctx.lineTo(x + width - r.tr, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + r.tr);
+            ctx.lineTo(x + width, y + height - r.br);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - r.br, y + height);
+            ctx.lineTo(x + r.bl, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - r.bl);
+            ctx.lineTo(x, y + r.tl);
+            ctx.quadraticCurveTo(x, y, x + r.tl, y);
+            ctx.closePath();
+        }
+
+        // ================= 5. BACKGROUND DECORATIVE PARTICLE CLASS (전방 선언으로 ReferenceError 차단) =================
+        class BackgroundParticle {
+            constructor() {
+                this.x = Math.random() * bgCanvas.width;
+                this.y = Math.random() * bgCanvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speedY = -(Math.random() * 0.4 + 0.1);
+                this.color = Math.random() > 0.5 ? 'rgba(6, 182, 212, 0.15)' : 'rgba(244, 63, 94, 0.15)';
+            }
+            update() {
+                this.y += this.speedY;
+                if (this.y < 0) {
+                    this.y = bgCanvas.height;
+                    this.x = Math.random() * bgCanvas.width;
+                }
+            }
+            draw() {
+                bgCtx.fillStyle = this.color;
+                bgCtx.beginPath();
+                bgCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                bgCtx.fill();
+            }
+        }
+
+        // [대개편: ReferenceError 버그 완벽 수술 완료! resizeBgCanvas 함수 정의 블록을 리스너 바인딩보다 훨씬 위쪽이자 BackgroundParticle 보다 아래에 안착시킴!]
+        function resizeBgCanvas() {
+            if (bgCanvas) {
+                bgCanvas.width = window.innerWidth;
+                bgCanvas.height = window.innerHeight;
+            }
+        }
+
+        function animateBg() {
+            if (bgCtx && bgCanvas) {
+                bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+                bgParticles.forEach(p => {
+                    p.update();
+                    p.draw();
+                });
+            }
+            requestAnimationFrame(animateBg);
+        }
+
+        // ================= 6. COMBAT RENDERING ENTITIES =================
+        class CombatSpark {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() * 8 - 4);
+                this.vy = (Math.random() * 8 - 5);
+                this.color = color;
+                this.alpha = 1.0;
+                this.size = Math.random() * 3 + 1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.15; 
+                this.alpha -= 0.03;
+            }
+            draw() {
+                bCtx.save();
+                bCtx.globalAlpha = this.alpha;
+                bCtx.shadowBlur = 6;
+                bCtx.shadowColor = this.color;
+                bCtx.fillStyle = this.color;
+                bCtx.beginPath();
+                bCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                bCtx.fill();
+                bCtx.restore();
+            }
+        }
+
+        class FloatingText {
+            constructor(x, y, text, isCrit, color) {
+                this.x = x + (Math.random() * 24 - 12);
+                this.y = y - 20;
+                this.text = text;
+                this.isCrit = isCrit;
+                this.color = color;
+                this.alpha = 1.0;
+                this.vy = -1.6; 
+                this.vx = (Math.random() * 1.8 - 0.9); 
+                this.life = 45; 
+                this.maxLife = 45;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy *= 0.98; 
+                this.alpha = this.life / this.maxLife; 
+                this.life--;
+            }
+            draw() {
+                bCtx.save();
+                bCtx.globalAlpha = this.alpha;
+                bCtx.fillStyle = this.color;
+                bCtx.shadowColor = this.color;
+                bCtx.shadowBlur = this.isCrit ? 16 : 6;
+                
+                const fontSize = this.isCrit ? 'bold 28px' : 'bold 18px';
+                bCtx.font = `${fontSize} 'Orbitron', 'Oswald', sans-serif`;
+                bCtx.textBaseline = 'bottom';
+                bCtx.textAlign = 'center';
+                
+                const displayString = this.isCrit ? `CRIT ${this.text}!` : this.text;
+                
+                bCtx.fillText(displayString, this.x, this.y);
+                bCtx.restore();
+            }
+        }
+
+        class ShockwavePillar {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.width = 40;
+                this.maxHeight = 220;
+                this.height = 0;
+                this.color = color;
+                this.alpha = 1.0;
+                this.life = 30; 
+                this.maxLife = 30;
+                this.growing = true;
+            }
+            update() {
+                if (this.growing) {
+                    this.height += (this.maxHeight - this.height) * 0.35;
+                    if (this.height >= this.maxHeight - 5) {
+                        this.growing = false;
+                    }
+                } else {
+                    this.alpha -= 0.06;
+                }
+                this.life--;
+            }
+            draw() {
+                bCtx.save();
+                bCtx.globalAlpha = this.alpha;
+                
+                const grad = bCtx.createLinearGradient(this.x - this.width/2, this.y, this.x + this.width/2, this.y);
+                grad.addColorStop(0, 'rgba(251, 146, 60, 0)');
+                grad.addColorStop(0.3, this.color);
+                grad.addColorStop(0.5, '#ffffff'); 
+                grad.addColorStop(0.7, this.color);
+                grad.addColorStop(1, 'rgba(251, 146, 60, 0)');
+                
+                bCtx.fillStyle = grad;
+                bCtx.shadowColor = this.color;
+                bCtx.shadowBlur = 25;
+                
+                bCtx.beginPath();
+                bCtx.moveTo(this.x - this.width/2, this.y);
+                bCtx.lineTo(this.x - 10, this.y - this.height * 0.5);
+                bCtx.lineTo(this.x - 25, this.y - this.height * 0.7);
+                bCtx.lineTo(this.x, this.y - this.height); 
+                bCtx.lineTo(this.x + 25, this.y - this.height * 0.7);
+                bCtx.lineTo(this.x + 10, this.y - this.height * 0.5);
+                bCtx.lineTo(this.x + this.width/2, this.y);
+                bCtx.closePath();
+                bCtx.fill();
+                
+                bCtx.restore();
+            }
+        }
+
+        class WeaponTrail {
+            constructor(x, y, w, h, color, scaleX) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+                this.color = color;
+                this.alpha = 0.7; 
+                this.scaleX = scaleX;
+                this.life = 12; 
+                this.maxLife = 12;
+            }
+            update() {
+                this.life--;
+                this.alpha = (this.life / this.maxLife) * 0.7;
+            }
+            draw() {
+                if (this.life <= 0) return;
+                bCtx.save();
+                bCtx.globalAlpha = this.alpha;
+                
+                const trailGrad = bCtx.createRadialGradient(this.x, this.y, this.w * 0.2, this.x, this.y, this.w);
+                trailGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)'); 
+                trailGrad.addColorStop(0.2, this.color);
+                trailGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                bCtx.fillStyle = trailGrad;
+                bCtx.shadowBlur = 20;
+                bCtx.shadowColor = this.color;
+                
+                bCtx.beginPath();
+                if (this.scaleX > 0) {
+                    bCtx.arc(this.x, this.y, this.w, -Math.PI / 3, Math.PI / 3);
+                    bCtx.lineTo(this.x, this.y);
+                } else {
+                    bCtx.arc(this.x, this.y, this.w, Math.PI * (2/3), Math.PI * (4/3));
+                    bCtx.lineTo(this.x, this.y);
+                }
+                bCtx.fill();
+                bCtx.restore();
+            }
+        }
+
+        class ArrowProjectile {
+            constructor(x, y, vx, owner, color, isCritical = false, critMultiplier = 1) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = 0;
+                this.width = isCritical ? 24 : 18;
+                this.height = isCritical ? 6 : 4;
+                this.owner = owner; 
+                this.color = isCritical ? '#fbbf24' : color; 
+                this.active = true;
+                this.isCritical = isCritical;
+                this.critMultiplier = critMultiplier;
+            }
+            update() {
+                this.x += this.vx;
+                if (this.x < 0 || this.x > bCanvas.width) {
+                    this.active = false;
+                }
+            }
+            draw() {
+                bCtx.save();
+                bCtx.shadowBlur = this.isCritical ? 18 : 10;
+                bCtx.shadowColor = this.color;
+                bCtx.fillStyle = this.color;
+                bCtx.fillRect(this.x, this.y, this.width, this.height);
+                
+                bCtx.fillStyle = this.isCritical ? 'rgba(251, 191, 36, 0.4)' : 'rgba(255, 255, 255, 0.4)';
+                bCtx.fillRect(this.x - (this.vx * 0.8), this.y + 1, this.width * 1.5, this.height - 2);
+                bCtx.restore();
+            }
+        }
+
+        // ================= 7. FIGHTER CLASS DEFINITION =================
+        class Fighter {
+            constructor(x, y, id, name, weaponId) {
+                this.id = id;
+                this.name = name;
+                this.weaponId = weaponId;
+                this.wepStats = weaponStats[weaponId];
+                
+                this.x = x;
+                this.y = y;
+                this.width = 32;
+                this.height = 64;
+                
+                this.vx = 0;
+                this.vy = 0;
+                this.gravity = this.wepStats.weight;
+                this.isGrounded = false;
+                
+                this.jumpCount = 0;
+                
+                this.hp = 100;
+                this.maxShield = 100;
+                this.shield = 100;
+                
+                this.direction = (id === 1) ? 1 : -1; 
+                this.isAttacking = false;
+                this.attackCooldown = 0;
+                this.attackActiveFrame = 0;
+                
+                this.isShielding = false;
+                this.shieldStun = 0; 
+
+                this.dashCooldown = 0;
+
+                this.scarfHistory = [];
+                for (let i = 0; i < 8; i++) {
+                    this.scarfHistory.push({ x: this.x, y: this.y + 12 });
+                }
+
+                this.nextArrowCritical = false;
+                this.nextArrowMultiplier = 1;
+                if (this.weaponId === 'bow') {
+                    if (Math.random() < 0.20) { 
+                        this.nextArrowCritical = true;
+                        this.nextArrowMultiplier = 1.5 + Math.random() * 1.0;
+                    }
+                }
+            }
+
+            update() {
+                if (this.dashCooldown > 0) this.dashCooldown--;
+
+                if (this.shieldStun > 0) {
+                    this.shieldStun--;
+                    this.isShielding = false;
+                }
+
+                if (!this.isShielding && this.shield < this.maxShield && this.shieldStun === 0) {
+                    this.shield = Math.min(this.maxShield, this.shield + 0.35);
+                }
+
+                if (this.isAttacking) {
+                    this.attackActiveFrame++;
+                    
+                    let limit = 8;
+                    if (this.weaponId === 'hammer') limit = 15; 
+                    if (this.weaponId === 'bow') limit = 6;
+                    
+                    if (this.attackActiveFrame > limit) {
+                        this.isAttacking = false;
+                        this.attackActiveFrame = 0;
+                    }
+                }
+                
+                if (this.attackCooldown > 0) {
+                    this.attackCooldown--;
+                    
+                    if (this.attackCooldown === 0 && this.weaponId === 'bow') {
+                        if (Math.random() < 0.20) { 
+                            this.nextArrowCritical = true;
+                            this.nextArrowMultiplier = 1.5 + Math.random() * 1.0; 
+                        } else {
+                            this.nextArrowCritical = false;
+                            this.nextArrowMultiplier = 1;
+                        }
+                    }
+                }
+
+                this.vy += this.gravity;
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                this.vx *= 0.82;
+
+                this.isGrounded = false;
+
+                const floorY = bCanvas.height - 40;
+                if (this.y + this.height >= floorY) {
+                    this.y = floorY - this.height;
+                    this.vy = 0;
+                    this.isGrounded = true;
+                    this.jumpCount = 0;
+                }
+
+                if (this.vy >= 0) {
+                    platforms.forEach(plat => {
+                        const feetY = this.y + this.height;
+                        const prevFeetY = feetY - this.vy; 
+                        
+                        if (prevFeetY <= plat.y + 5 && feetY >= plat.y) {
+                            if (this.x + this.width > plat.x && this.x < plat.x + plat.w) {
+                                this.y = plat.y - this.height;
+                                this.vy = 0;
+                                this.isGrounded = true;
+                                this.jumpCount = 0;
+                            }
+                        }
+                    });
+                }
+
+                if (this.x < 15) {
+                    this.x = 15;
+                    this.vx = 0;
+                }
+                if (this.x + this.width > bCanvas.width - 15) {
+                    this.x = bCanvas.width - 15 - this.width;
+                    this.vx = 0;
+                }
+
+                const scarfTargetX = (this.direction > 0) ? this.x - 4 : this.x + this.width + 4;
+                const scarfTargetY = this.y + 16;
+                this.scarfHistory.unshift({ x: scarfTargetX, y: scarfTargetY });
+                if (this.scarfHistory.length > 8) {
+                    this.scarfHistory.pop();
+                }
+            }
+
+            jump() {
+                if (this.shieldStun > 0) return;
+                
+                if (this.isGrounded) {
+                    this.vy = this.wepStats.jumpForce;
+                    this.isGrounded = false;
+                    this.jumpCount = 1;
+                    playSound('jump');
+                }
+            }
+
+            attack() {
+                if (this.isAttacking || this.attackCooldown > 0 || this.isShielding || this.shieldStun > 0) return;
+                
+                this.isAttacking = true;
+                this.attackActiveFrame = 0;
+                this.attackCooldown = this.wepStats.speed;
+                
+                if (this.weaponId === 'katana') {
+                    playSound('slash_katana');
+                    
+                    const slashX = (this.direction > 0) ? this.x + this.width : this.x;
+                    const slashY = this.y + this.height/2;
+                    battleParticles.push(new WeaponTrail(slashX, slashY, this.wepStats.reach, this.wepStats.height, this.wepStats.color, this.direction));
+                } 
+                else if (this.weaponId === 'bow') {
+                    playSound('slash_bow');
+                    
+                    const arrowDir = this.direction;
+                    const arrowX = (this.direction > 0) ? this.x + this.width + 5 : this.x - 20;
+                    const arrowY = this.y + this.height/2;
+                    
+                    projectiles.push(new ArrowProjectile(
+                        arrowX, 
+                        arrowY, 
+                        arrowDir * 12, 
+                        this, 
+                        this.wepStats.color, 
+                        this.nextArrowCritical, 
+                        this.nextArrowMultiplier
+                    ));
+
+                    this.nextArrowCritical = false;
+                    this.nextArrowMultiplier = 1;
+                } 
+                else if (this.weaponId === 'hammer') {
+                    playSound('slash_hammer');
+                    
+                    setTimeout(() => {
+                        if (this.isAttacking) {
+                            const shockX = (this.direction > 0) ? this.x + this.width + 40 : this.x - 40;
+                            shockwavePillars.push(new ShockwavePillar(shockX, bCanvas.height - 40, '#fb923c'));
+                        }
+                    }, 150);
+                }
+            }
+
+            startShield() {
+                if (this.isAttacking || this.shieldStun > 0 || this.shield < 10) return;
+                this.isShielding = true;
+            }
+
+            stopShield() {
+                this.isShielding = false;
+            }
+
+            draw() {
+                bCtx.save();
+                
+                const themeColor = (this.id === 1) ? '#06b6d4' : '#f43f5e';
+                const weaponColor = this.wepStats.color;
+                
+                if (this.shieldStun > 0) {
+                    bCtx.shadowColor = '#e2e8f0';
+                    bCtx.shadowBlur = Math.sin(Date.now() / 50) * 8 + 8;
+                } else {
+                    bCtx.shadowColor = themeColor;
+                    bCtx.shadowBlur = 10;
+                }
+
+                // 1. 닌자 스카프 머플러
+                bCtx.save();
+                bCtx.strokeStyle = themeColor;
+                bCtx.lineWidth = 4;
+                bCtx.lineCap = 'round';
+                bCtx.shadowBlur = 15;
+                bCtx.shadowColor = themeColor;
+                bCtx.beginPath();
+                if (this.scarfHistory.length > 0) {
+                    bCtx.moveTo(this.scarfHistory[0].x, this.scarfHistory[0].y);
+                    for (let i = 1; i < this.scarfHistory.length; i++) {
+                        bCtx.lineTo(this.scarfHistory[i].x, this.scarfHistory[i].y + Math.sin(Date.now() / 150 + i) * 3);
+                    }
+                }
+                bCtx.stroke();
+                bCtx.restore();
+
+                // 2. 사이버 닌자 슬림 바디 슈트
+                bCtx.fillStyle = '#0f172a'; 
+                bCtx.strokeStyle = (this.shieldStun > 0) ? '#64748b' : themeColor;
+                bCtx.lineWidth = 2.5;
+                
+                drawSafeRoundRect(bCtx, this.x, this.y, this.width, this.height, [12, 12, 4, 4]);
+                bCtx.fill();
+                bCtx.stroke();
+
+                // 3. 닌자 바이저 안광 바이저
+                bCtx.save();
+                bCtx.fillStyle = (this.shieldStun > 0) ? '#475569' : themeColor;
+                bCtx.shadowBlur = 18;
+                bCtx.shadowColor = themeColor;
+                
+                bCtx.beginPath();
+                const visorX = (this.direction > 0) ? this.x + 12 : this.x + 4;
+                const visorY = this.y + 10;
+                bCtx.moveTo(visorX, visorY);
+                bCtx.lineTo(visorX + 16, visorY + 2);
+                bCtx.lineTo(visorX + 12, visorY + 6);
+                bCtx.lineTo(visorX, visorY + 4);
+                bCtx.closePath();
+                bCtx.fill();
+                bCtx.restore();
+
+                // 4. 세부 테크노 플레이트 격막 디자인
+                bCtx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                bCtx.lineWidth = 1.5;
+                bCtx.beginPath();
+                bCtx.moveTo(this.x + 4, this.y + 24);
+                bCtx.lineTo(this.x + this.width - 4, this.y + 24);
+                bCtx.lineTo(this.x + this.width/2, this.y + 36);
+                bCtx.closePath();
+                bCtx.stroke();
+
+                // 5. 가드 방어막 홀로그램 돔
+                if (this.isShielding) {
+                    bCtx.save();
+                    bCtx.strokeStyle = 'rgba(129, 140, 248, 0.8)';
+                    bCtx.fillStyle = 'rgba(129, 140, 248, 0.15)';
+                    bCtx.shadowColor = '#818cf8';
+                    bCtx.shadowBlur = 25;
+                    bCtx.lineWidth = 2.5;
+                    bCtx.beginPath();
+                    
+                    const arcX = this.x + this.width/2;
+                    bCtx.arc(arcX, this.y + this.height/2, 44, -Math.PI/2, Math.PI/2, this.direction < 0);
+                    bCtx.stroke();
+                    bCtx.fill();
+                    
+                    bCtx.strokeStyle = 'rgba(129, 140, 248, 0.25)';
+                    bCtx.lineWidth = 1;
+                    bCtx.beginPath();
+                    bCtx.arc(arcX, this.y + this.height/2, 25, -Math.PI/2, Math.PI/2, this.direction < 0);
+                    bCtx.stroke();
+                    bCtx.restore();
+                }
+
+                // 6. 무기 실시간 렌더러
+                bCtx.save();
+                const gripX = (this.direction > 0) ? this.x + this.width - 4 : this.x + 4;
+                const gripY = this.y + this.height/2 + 4;
+                
+                bCtx.translate(gripX, gripY);
+                
+                let attackAngle = (this.direction * Math.PI / 8); 
+                
+                if (this.isAttacking) {
+                    if (this.weaponId === 'katana') {
+                        if (this.attackActiveFrame <= 3) {
+                            attackAngle = -this.direction * (Math.PI / 3); 
+                        } 
+                        else {
+                            const progress = (this.attackActiveFrame - 3) / 5; 
+                            const startAngle = -this.direction * (Math.PI / 3);
+                            const endAngle = this.direction * (Math.PI / 1.6);
+                            attackAngle = startAngle + (endAngle - startAngle) * progress;
+                        }
+                    } else if (this.weaponId === 'hammer') {
+                        if (this.attackActiveFrame <= 5) {
+                            attackAngle = -this.direction * (Math.PI / 2.2);
+                        } else {
+                            const progress = (this.attackActiveFrame - 5) / 10;
+                            const startAngle = -this.direction * (Math.PI / 2.2);
+                            const endAngle = this.direction * (Math.PI / 1.5);
+                            attackAngle = startAngle + (endAngle - startAngle) * progress;
+                        }
+                    } else if (this.weaponId === 'bow') {
+                        attackAngle = (this.direction * Math.PI / 6);
+                    }
+                }
+                bCtx.rotate(attackAngle);
+
+                if (this.weaponId === 'katana') {
+                    bCtx.save();
+                    
+                    // 검 손잡이
+                    bCtx.strokeStyle = '#0f172a';
+                    bCtx.lineWidth = 6;
+                    bCtx.lineCap = 'round';
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, 0);
+                    bCtx.lineTo(-this.direction * 14, 14);
+                    bCtx.stroke();
+
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 2.5;
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, 0);
+                    bCtx.lineTo(-this.direction * 14, 14);
+                    bCtx.stroke();
+
+                    // 검 수호막 (Tsuba)
+                    bCtx.fillStyle = '#1e293b';
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 1.5;
+                    bCtx.fillRect(-this.direction * 2 - 4, -4, 8, 8);
+                    bCtx.strokeRect(-this.direction * 2 - 4, -4, 8, 8);
+
+                    // 중심 광원 센터
+                    bCtx.fillStyle = '#ffffff';
+                    bCtx.beginPath();
+                    bCtx.arc(-this.direction * 2, 0, 1.5, 0, Math.PI * 2);
+                    bCtx.fill();
+                    
+                    // 레이저 검신
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 6;
+                    bCtx.globalAlpha = 0.4;
+                    bCtx.shadowBlur = 20;
+                    bCtx.shadowColor = weaponColor;
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, 0);
+                    bCtx.lineTo(this.direction * 65, -12);
+                    bCtx.stroke();
+                    
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 4;
+                    bCtx.globalAlpha = 0.8;
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, 0);
+                    bCtx.lineTo(this.direction * 65, -12);
+                    bCtx.stroke();
+
+                    // 백색 소드 코어
+                    bCtx.strokeStyle = '#ffffff';
+                    bCtx.lineWidth = 2.0;
+                    bCtx.globalAlpha = 1.0;
+                    bCtx.shadowBlur = 0;
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, 0);
+                    bCtx.lineTo(this.direction * 65, -12);
+                    bCtx.stroke();
+
+                    bCtx.restore();
+                } 
+                else if (this.weaponId === 'bow') {
+                    bCtx.save();
+                    
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 3.5;
+                    bCtx.shadowBlur = 15;
+                    bCtx.shadowColor = weaponColor;
+                    
+                    bCtx.beginPath();
+                    if (this.direction > 0) {
+                        bCtx.moveTo(0, -22);
+                        bCtx.quadraticCurveTo(15, -18, 12, 0);
+                        bCtx.quadraticCurveTo(15, 18, 0, 22);
+                    } else {
+                        bCtx.moveTo(0, -22);
+                        bCtx.quadraticCurveTo(-15, -18, -12, 0);
+                        bCtx.quadraticCurveTo(-15, 18, 0, 22);
+                    }
+                    bCtx.stroke();
+
+                    // 캠 기어
+                    bCtx.fillStyle = '#1e293b';
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 1.5;
+                    bCtx.beginPath();
+                    bCtx.arc(0, -22, 3.5, 0, Math.PI * 2);
+                    bCtx.arc(0, 22, 3.5, 0, Math.PI * 2);
+                    bCtx.fill();
+                    bCtx.stroke();
+                    
+                    // 레이저 시위 줄
+                    bCtx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+                    bCtx.lineWidth = 1;
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, -22);
+                    bCtx.lineTo(0, 22);
+                    bCtx.stroke();
+
+                    // 활 날개쪽 회로 회선 데코
+                    bCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    bCtx.lineWidth = 1;
+                    bCtx.beginPath();
+                    if (this.direction > 0) {
+                        bCtx.moveTo(6, -10);
+                        bCtx.lineTo(10, 0);
+                        bCtx.lineTo(6, 10);
+                    } else {
+                        bCtx.moveTo(-6, -10);
+                        bCtx.lineTo(-10, 0);
+                        bCtx.lineTo(-6, 10);
+                    }
+                    bCtx.stroke();
+
+                    if (this.nextArrowCritical) {
+                        const bowGrad = bCtx.createLinearGradient(-12, -22, 12, 22);
+                        const glowCycle = (Math.sin(Date.now() / 100) + 1) / 2;
+                        
+                        bowGrad.addColorStop(0, '#fbbf24');
+                        bowGrad.addColorStop(glowCycle, '#ffffff');
+                        bowGrad.addColorStop(1, '#fbbf24');
+                        
+                        bCtx.strokeStyle = bowGrad;
+                        bCtx.lineWidth = 5.5;
+                        bCtx.shadowColor = '#fbbf24';
+                        bCtx.shadowBlur = 25;
+                        
+                        bCtx.beginPath();
+                        if (this.direction > 0) {
+                            bCtx.moveTo(0, -22);
+                            bCtx.quadraticCurveTo(15, -18, 12, 0);
+                            bCtx.quadraticCurveTo(15, 18, 0, 22);
+                        } else {
+                            bCtx.moveTo(0, -22);
+                            bCtx.quadraticCurveTo(-15, -18, -12, 0);
+                            bCtx.quadraticCurveTo(-15, 18, 0, 22);
+                        }
+                        bCtx.stroke();
+                    }
+                    bCtx.restore();
+                } 
+                else if (this.weaponId === 'hammer') {
+                    // 망치 렌더링
+                    bCtx.save();
+                    
+                    // 롱샤프트 메탈 지지대 (Grip Shaft)
+                    bCtx.strokeStyle = '#1e293b';
+                    bCtx.lineWidth = 5.5;
+                    bCtx.lineCap = 'round';
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, 0);
+                    bCtx.lineTo(this.direction * 40, 0); 
+                    bCtx.stroke();
+
+                    // 주황 테크노 라인 전류선
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 1.5;
+                    bCtx.beginPath();
+                    bCtx.moveTo(0, 0);
+                    bCtx.lineTo(this.direction * 40, 0);
+                    bCtx.stroke();
+
+                    // 손잡이 부근 금속 랩핑 링 렌더링
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 1;
+                    bCtx.beginPath();
+                    bCtx.arc(this.direction * 12, 0, 3.5, 0, Math.PI * 2);
+                    bCtx.arc(this.direction * 26, 0, 3.5, 0, Math.PI * 2);
+                    bCtx.stroke();
+
+                    // 자루 끝자락을 기준으로 수직 정렬을 잡기 위해 이동 및 -90도 회전
+                    bCtx.translate(this.direction * 40, 0);
+                    bCtx.rotate(this.direction * -Math.PI / 4);
+
+                    // 다크 메탈 해머 헤드 본체 바디
+                    const headX = -10; 
+                    const headY = -22; 
+                    bCtx.fillStyle = '#0f172a';
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 2.5;
+                    drawSafeRoundRect(bCtx, headX, headY, 20, 44, 4);
+                    bCtx.fill();
+                    bCtx.stroke();
+
+                    // 전방 특수 임팩트 타격 플레이트 격막
+                    bCtx.fillStyle = '#ffffff';
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 1.5;
+                    const plateX = (this.direction > 0) ? headX + 16 : headX;
+                    bCtx.fillRect(plateX, -14, 4, 28);
+                    bCtx.strokeRect(plateX, -14, 4, 28);
+
+                    // 후방 플라즈마 분출 제트 노즐 (Rear Thruster)
+                    bCtx.fillStyle = '#1e293b';
+                    bCtx.strokeStyle = weaponColor;
+                    bCtx.lineWidth = 1;
+                    const thrusterX = (this.direction > 0) ? headX - 4 : headX + 20;
+                    bCtx.fillRect(thrusterX, -10, 4, 7);
+                    bCtx.strokeRect(thrusterX, -10, 4, 7);
+                    bCtx.fillRect(thrusterX, 3, 4, 7);
+                    bCtx.strokeRect(thrusterX, 3, 4, 7);
+
+                    // 분출되는 고온 가속 플라즈마 추진 꼬리 화염
+                    bCtx.fillStyle = weaponColor;
+                    bCtx.globalAlpha = 0.85;
+                    bCtx.beginPath();
+                    if (this.direction > 0) {
+                        bCtx.moveTo(thrusterX, -6.5);
+                        bCtx.lineTo(thrusterX - 10, -6.5);
+                        bCtx.lineTo(thrusterX, -4.5);
+                        
+                        bCtx.moveTo(thrusterX, 6.5);
+                        bCtx.lineTo(thrusterX - 10, 6.5);
+                        bCtx.lineTo(thrusterX, 8.5);
+                    } else {
+                        bCtx.moveTo(thrusterX + 4, -6.5);
+                        bCtx.lineTo(thrusterX + 14, -6.5);
+                        bCtx.lineTo(thrusterX + 4, -4.5);
+                        
+                        bCtx.moveTo(thrusterX + 4, 6.5);
+                        bCtx.lineTo(thrusterX + 14, 6.5);
+                        bCtx.lineTo(thrusterX + 4, 8.5);
+                    }
+                    bCtx.closePath();
+                    bCtx.fill();
+
+                    bCtx.restore();
+                }
+
+                bCtx.restore();
+                bCtx.restore();
+            }
+        }
+
+        // ================= 8. GAMEPLAY ENGINE (Collisions, Input Loops, Screens) =================
+        function processAiLogic() {
+            if (!p2 || p2.shieldStun > 0) return;
+
+            const dist = Math.abs(p1.x - p2.x);
+            
+            if (p1.x < p2.x) p2.direction = -1;
+            else p2.direction = 1;
+
+            if (p2.dashCooldown === 0 && Math.random() < 0.015) {
+                if (dist > 320) {
+                    triggerDash(p2, p2.direction); 
+                } else if (p1.isAttacking && dist < 120) {
+                    triggerDash(p2, -p2.direction); 
+                }
+            }
+
+            let isArrowThreat = false;
+            projectiles.forEach(proj => {
+                if (proj.owner === p1 && Math.abs(proj.x - p2.x) < 180) {
+                    isArrowThreat = true;
+                }
+            });
+
+            if ((p1.isAttacking && dist < p1.wepStats.reach + 30) || isArrowThreat) {
+                if (Math.random() < 0.45) {
+                    p2.startShield();
+                    return;
+                }
+            } else {
+                if (Math.random() < 0.05) p2.stopShield();
+            }
+
+            let safeDistance = p2.wepStats.reach * 0.8;
+            if (p2.weaponId === 'bow') {
+                safeDistance = 250; 
+            }
+
+            const isPlayerHigh = p1.y < p2.y - 50;
+
+            if (p2.weaponId === 'bow') {
+                if (dist < 180) {
+                    p2.vx = p2.direction * -p2.wepStats.moveSpeed;
+                } else if (dist > 350) {
+                    p2.vx = p2.direction * p2.wepStats.moveSpeed;
+                }
+                
+                if (isPlayerHigh && Math.random() < 0.03 && p2.isGrounded) {
+                    p2.jump();
+                }
+
+                if (Math.random() < 0.04) {
+                    p2.attack();
+                }
+            } else {
+                if (dist > safeDistance) {
+                    if (p1.x < p2.x) p2.vx = -p2.wepStats.moveSpeed;
+                    else p2.vx = p2.wepStats.moveSpeed;
+                    
+                    if ((Math.random() < 0.02 || (isPlayerHigh && Math.random() < 0.06)) && p2.isGrounded) {
+                        p2.jump();
+                    }
+                } else {
+                    if (Math.random() < 0.12) {
+                        p2.attack();
+                    }
+                }
+            }
+        }
+
+        // 박스 충돌 판정용 무해한 헬퍼
+        function isIntersecting(r1, r2) {
+            return !(r1.x + r1.w < r2.x || 
+                     r2.x + r2.w < r1.x || 
+                     r1.y + r1.h < r2.y || 
+                     r2.y + r2.h < r1.y);
+        }
+
+        // 실시간 격투 물리연산 충돌 감지 엔진
+        function checkCollisions() {
+            if (!p1 || !p2) return;
+
+            // 공격 판정 최적화: 휘두르는 동작에 맞춰 판정 범위 설정
+            if (p1.isAttacking && p1.attackActiveFrame >= 4 && p1.attackActiveFrame <= 7 && p1.weaponId !== 'bow') { 
+                const p1ReachX = (p1.direction > 0) ? p1.x + p1.width : p1.x - p1.wepStats.reach;
+                
+                const attackRect = {
+                    x: p1ReachX,
+                    y: p1.y + p1.height/2 - p1.wepStats.height/2,
+                    w: p1.wepStats.reach,
+                    h: p1.wepStats.height
+                };
+
+                const targetRect = {
+                    x: p2.x,
+                    y: p2.y,
+                    w: p2.width,
+                    h: p2.height
+                };
+
+                if (isIntersecting(attackRect, targetRect)) {
+                    let isKatanaTip = false;
+                    if (p1.weaponId === 'katana') {
+                        const tipThresholdMin = p1.wepStats.reach - 20; 
+                        const distanceX = Math.abs((p1.x + p1.width/2) - (p2.x + p2.width/2));
+                        if (distanceX >= tipThresholdMin && distanceX <= p1.wepStats.reach + p2.width/2) {
+                            isKatanaTip = true;
+                        }
+                    }
+                    applyCombatDamage(p1, p2, false, isKatanaTip);
+                }
+            }
+
+            if (p2.isAttacking && p2.attackActiveFrame >= 4 && p2.attackActiveFrame <= 7 && p2.weaponId !== 'bow') { 
+                const p2ReachX = (p2.direction > 0) ? p2.x + p2.width : p2.x - p2.wepStats.reach;
+                
+                const attackRect = {
+                    x: p2ReachX,
+                    y: p2.y + p2.height/2 - p2.wepStats.height/2,
+                    w: p2.wepStats.reach,
+                    h: p2.wepStats.height
+                };
+
+                const targetRect = {
+                    x: p1.x,
+                    y: p1.y,
+                    w: p1.width,
+                    h: p1.height
+                };
+
+                if (isIntersecting(attackRect, targetRect)) {
+                    let isKatanaTip = false;
+                    if (p2.weaponId === 'katana') {
+                        const tipThresholdMin = p2.wepStats.reach - 20;
+                        const distanceX = Math.abs((p2.x + p2.width/2) - (p1.x + p1.width/2));
+                        if (distanceX >= tipThresholdMin && distanceX <= p2.wepStats.reach + p1.width/2) {
+                            isKatanaTip = true;
+                        }
+                    }
+                    applyCombatDamage(p2, p1, false, isKatanaTip);
+                }
+            }
+
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                if (!proj.active) continue;
+
+                const target = (proj.owner === p1) ? p2 : p1;
+                const targetRect = {
+                    x: target.x,
+                    y: target.y,
+                    w: target.width,
+                    h: target.height
+                };
+
+                const projRect = {
+                    x: proj.x,
+                    y: proj.y,
+                    w: proj.width,
+                    h: proj.height
+                };
+
+                if (isIntersecting(projRect, targetRect)) {
+                    proj.active = false;
+                    applyCombatDamage(proj.owner, target, true, false, proj.isCritical, proj.critMultiplier);
+                    projectiles.splice(i, 1);
+                }
+            }
+
+            shockwavePillars.forEach(pillar => {
+                if (pillar.life < 10) return; 
+
+                const target = (p1 && p1.weaponId === 'hammer') ? p2 : p1;
+                if (target && target.x + target.width > pillar.x - pillar.width/2 && target.x < pillar.x + pillar.width/2) {
+                    if (target.y + target.height >= pillar.y - pillar.height && target.y <= pillar.y) {
+                        pillar.life = 5; 
+                        applyCombatDamage((p1 && p1.weaponId === 'hammer' ? p1 : p2), target, false, false, false, 1);
+                    }
+                }
+            });
+        }
+
+        function applyCombatDamage(attacker, victim, isRanged = false, isKatanaTip = false, isCritArrow = false, critArrowMultiplier = 1) {
+            const hitX = (attacker.direction > 0) ? victim.x : victim.x + victim.width;
+            const hitY = victim.y + victim.height/2;
+
+            if (victim.isShielding && ((attacker.direction > 0 && victim.direction < 0) || (attacker.direction < 0 && victim.direction > 0))) {
+                playSound('block');
+                
+                let damageCost = attacker.wepStats.damage * (attacker.weaponId === 'hammer' ? 2.5 : 1.0);
+                if (isKatanaTip) damageCost *= 1.5; 
+                if (isCritArrow) damageCost *= critArrowMultiplier; 
+
+                victim.shield -= damageCost;
+                
+                floatingTexts.push(new FloatingText(victim.x + victim.width / 2, victim.y, "BLOCK", false, '#818cf8'));
+
+                attacker.vx = -attacker.direction * 3.0;
+                
+                for (let i = 0; i < 15; i++) {
+                    battleParticles.push(new CombatSpark(hitX, hitY, '#818cf8'));
+                }
+
+                if (victim.shield <= 0) {
+                    victim.shield = 0;
+                    victim.shieldStun = 100; 
+                    victim.isShielding = false;
+                    playSound('hit');
+                    floatingTexts.push(new FloatingText(victim.x + victim.width / 2, victim.y, "CRASH!", true, '#fb923c'));
+                }
+                return;
+            }
+
+            let finalDamage = 0;
+
+            if (attacker.weaponId === 'katana') {
+                finalDamage = isKatanaTip ? 15 : 8;
+            } else if (attacker.weaponId === 'hammer') {
+                finalDamage = 20;
+            } else if (attacker.weaponId === 'bow') {
+                let baseDmg = 6;
+                if (isCritArrow) {
+                    finalDamage = Math.round(baseDmg * critArrowMultiplier);
+                } else {
+                    finalDamage = baseDmg;
+                }
+            }
+
+            victim.hp = Math.max(0, victim.hp - finalDamage);
+
+            const isCritical = isKatanaTip || isCritArrow;
+            let damageTextColor = '#ffffff';
+
+            if (isCritical) {
+                damageTextColor = '#fbbf24'; 
+            } else {
+                damageTextColor = (attacker.id === 1) ? '#06b6d4' : '#f43f5e';
+            }
+
+            floatingTexts.push(new FloatingText(
+                victim.x + victim.width / 2, 
+                victim.y, 
+                `${finalDamage}`, 
+                isCritical, 
+                damageTextColor
+            ));
+
+            shakeFrames = (attacker.weaponId === 'hammer' || isKatanaTip || isCritArrow) ? 18 : 10;
+            playSound('hit');
+
+            const kbPower = (attacker.weaponId === 'hammer' || isKatanaTip || isCritArrow) ? 8.0 : 4.0;
+            victim.vx = attacker.direction * kbPower;
+            victim.vy = -3.5;
+
+            const sparkColor = (isKatanaTip || isCritArrow) ? '#fbbf24' : attacker.wepStats.color;
+            const sparkCount = (attacker.weaponId === 'hammer' || isKatanaTip || isCritArrow) ? 35 : 18;
+            for (let i = 0; i < sparkCount; i++) {
+                battleParticles.push(new CombatSpark(hitX, hitY, sparkColor));
+            }
+
+            updateHUD();
+
+            if (victim.hp <= 0) {
+                finishBattle(attacker);
+            }
+        }
+
+        function gameArenaLoop() {
+            if (!gameState.isArenaRunning) return;
+
+            bCtx.save();
+            if (shakeFrames > 0) {
+                const dx = (Math.random() * 8 - 4);
+                const dy = (Math.random() * 8 - 4);
+                bCtx.translate(dx, dy);
+                shakeFrames--;
+            }
+
+            bCtx.clearRect(0, 0, bCanvas.width, bCanvas.height);
+
+            bCtx.strokeStyle = '#111029';
+            bCtx.lineWidth = 1;
+            for (let i = 0; i < bCanvas.width; i += 40) {
+                bCtx.beginPath();
+                bCtx.moveTo(i, 0);
+                bCtx.lineTo(i, bCanvas.height);
+                bCtx.stroke();
+            }
+            for (let j = 0; j < bCanvas.height; j += 40) {
+                bCtx.beginPath();
+                bCtx.moveTo(0, j);
+                bCtx.lineTo(bCanvas.width, j);
+                bCtx.stroke();
+            }
+
+            platforms.forEach(plat => {
+                bCtx.save();
+                bCtx.strokeStyle = plat.color.replace('0.4', '1.0');
+                bCtx.fillStyle = plat.color;
+                bCtx.lineWidth = 2.5;
+                bCtx.shadowColor = bCtx.strokeStyle;
+                bCtx.shadowBlur = 10;
+                
+                drawSafeRoundRect(bCtx, plat.x, plat.y, plat.w, plat.h, 4);
+                bCtx.fill();
+                bCtx.stroke();
+                bCtx.restore();
+            });
+
+            bCtx.strokeStyle = '#4f46e5';
+            bCtx.shadowColor = '#4f46e5';
+            bCtx.shadowBlur = 10;
+            bCtx.lineWidth = 4;
+            bCtx.beginPath();
+            bCtx.moveTo(0, bCanvas.height - 40);
+            bCtx.lineTo(bCanvas.width, bCanvas.height - 40);
+            bCtx.stroke();
+            bCtx.shadowBlur = 0;
+
+            if (gameState.combatLive) {
+            if (keys.KeyA) {
+                p1.vx = -p1.wepStats.moveSpeed;
+                p1.direction = -1;
+            }
+            if (keys.KeyD) {
+                p1.vx = p1.wepStats.moveSpeed;
+                p1.direction = 1;
+            }
+            if (keys.KeyW) {
+                p1.jump();
+                keys.KeyW = false;
+            }
+            if (keys.KeyF) {
+                p1.attack();
+            }
+            if (keys.KeyG) {
+                p1.startShield();
+            } else {
+                p1.stopShield();
+            }
+
+            if (gameState.gameMode === 'PVP') {
+                if (keys.ArrowLeft) {
+                    p2.vx = -p2.wepStats.moveSpeed;
+                    p2.direction = -1;
+                }
+                if (keys.ArrowRight) {
+                    p2.vx = p2.wepStats.moveSpeed;
+                    p2.direction = 1;
+                }
+                if (keys.ArrowUp) {
+                    p2.jump();
+                    keys.ArrowUp = false;
+                }
+                if (keys.KeyK) {
+                    p2.attack();
+                }
+                if (keys.KeyL) {
+                    p2.startShield();
+                } else {
+                    p2.stopShield();
+                }
+            } else {
+                processAiLogic();
+            }
+            } // end combatLive gate
+
+            p1.update();
+            p2.update();
+
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                const proj = projectiles[i];
+                proj.update();
+                if (!proj.active) {
+                    projectiles.splice(i, 1);
+                } else {
+                    proj.draw();
+                }
+            }
+
+            for (let i = shockwavePillars.length - 1; i >= 0; i--) {
+                const pillar = shockwavePillars[i];
+                pillar.update();
+                if (pillar.life <= 0) {
+                    shockwavePillars.splice(i, 1);
+                } else {
+                    pillar.draw();
+                }
+            }
+
+            if (gameState.combatLive) checkCollisions();
+
+            for (let i = battleParticles.length - 1; i >= 0; i--) {
+                battleParticles[i].update();
+                battleParticles[i].draw();
+                if (battleParticles[i].alpha <= 0) {
+                    battleParticles.splice(i, 1);
+                }
+            }
+
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                floatingTexts[i].update();
+                floatingTexts[i].draw();
+                if (floatingTexts[i].life <= 0) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+
+            p1.draw();
+            p2.draw();
+
+            bCtx.restore();
+
+            if (gameState.isArenaRunning) {
+                gameLoopId = requestAnimationFrame(gameArenaLoop);
+            }
+        }
+
+        function finishBattle(winnerFighter) {
+            gameState.isArenaRunning = false;
+            gameState.combatLive = false;
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+            
+            playSound('victory');
+
+            const flashColor = winnerFighter.wepStats.color;
+            for (let i = 0; i < 5; i++) {
+                battleParticles.push(new CombatSpark(
+                    bCanvas.width / 2 + (Math.random() * 300 - 150), 
+                    bCanvas.height / 2 + (Math.random() * 150 - 75), 
+                    flashColor
+                ));
+            }
+
+            setTimeout(() => {
+                document.getElementById('resWinnerName').textContent = winnerFighter.name;
+                document.getElementById('resMatchMode').textContent = (gameState.gameMode === 'AI') ? "VS COMPUTOR (AI)" : "LOCAL 2-PLAYER";
+                
+                const title = document.getElementById('resultTitle');
+                const desc = document.getElementById('resultDescription');
+
+                title.textContent = `${winnerFighter.name} WIN!`;
+                if (winnerFighter.id === 1) {
+                    title.className = "text-5xl font-black font-orbitron tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 neon-text-cyan animate-pulse";
+                    desc.textContent = "눈부신 아케이드 손기술과 무기 무빙 전략으로 사이버 아레나 최후의 군주가 되었습니다!";
+                } else {
+                    title.className = "text-5xl font-black font-orbitron tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-600 neon-text-pink animate-pulse";
+                    desc.textContent = "상대 닌자의 영리한 지형 돌파와 완벽한 참격에 시스템 바디가 관통당했습니다.";
+                }
+
+                changeScreen('RESULT');
+            }, 1200);
+        }
+
+        // ================= 9. 누락 복원: 대시 / HUD 갱신 / 전장 초기화 =================
+
+        // 쾌속 대시 발동기: 더블탭(A/D) 또는 AI가 호출. 방향(dir)으로 순간 추진력 부여
+        function triggerDash(fighter, dir) {
+            if (!fighter) return;
+            if (fighter.shieldStun > 0 || fighter.dashCooldown > 0) return;
+
+            fighter.direction = dir;
+            fighter.vx = dir * fighter.wepStats.moveSpeed * 4.2; // 순간 가속 추진
+            fighter.dashCooldown = 45; // 약 0.75초 재사용 대기
+
+            playSound('dash');
+
+            // 대시 잔상 스파크 연출 (몸체 색상 기준)
+            const themeColor = (fighter.id === 1) ? '#06b6d4' : '#f43f5e';
+            for (let i = 0; i < 12; i++) {
+                battleParticles.push(new CombatSpark(
+                    fighter.x + fighter.width / 2,
+                    fighter.y + fighter.height / 2,
+                    themeColor
+                ));
+            }
+        }
+
+        // HUD 체력바 / 수치 / 가드 게이지 실시간 갱신
+        function updateHUD() {
+            if (!p1 || !p2) return;
+
+            const p1HpPct = Math.max(0, p1.hp);
+            const p2HpPct = Math.max(0, p2.hp);
+
+            document.getElementById('hudP1Hp').style.width = p1HpPct + '%';
+            document.getElementById('hudP2Hp').style.width = p2HpPct + '%';
+
+            document.getElementById('hudP1HpVal').textContent = `${Math.round(p1HpPct)} / 100 HP`;
+            document.getElementById('hudP2HpVal').textContent = `${Math.round(p2HpPct)} / 100 HP`;
+
+            document.getElementById('hudP1Shield').style.width = Math.max(0, (p1.shield / p1.maxShield) * 100) + '%';
+            document.getElementById('hudP2Shield').style.width = Math.max(0, (p2.shield / p2.maxShield) * 100) + '%';
+        }
+
+        // 전장 초기화 오케스트레이터: 파이터 생성 → HUD 세팅 → 카운트다운 → 아레나 가동
+        function initBattleField() {
+            // 이전 매치 잔존 객체 클린업
+            projectiles = [];
+            battleParticles = [];
+            floatingTexts = [];
+            shockwavePillars = [];
+            shakeFrames = 0;
+            if (gameLoopId) cancelAnimationFrame(gameLoopId);
+
+            const floorY = bCanvas.height - 40;
+
+            // 좌측: P1 / 우측: P2 스폰
+            p1 = new Fighter(120, floorY - 64, 1, gameState.p1Name, gameState.p1Weapon);
+            p2 = new Fighter(bCanvas.width - 120 - 32, floorY - 64, 2, gameState.p2Name, gameState.p2Weapon);
+
+            // HUD 텍스트 라벨 세팅
+            document.getElementById('hudP1Name').textContent = gameState.p1Name;
+            document.getElementById('hudP2Name').textContent = gameState.p2Name;
+            document.getElementById('hudP1Weapon').textContent = weaponStats[gameState.p1Weapon].name;
+            document.getElementById('hudP2Weapon').textContent = weaponStats[gameState.p2Weapon].name;
+
+            updateHUD();
+
+            // BATTLE 화면 전환
+            changeScreen('BATTLE');
+
+            // 카운트다운 오버레이 연출 (READY → 3 → 2 → 1 → FIGHT!)
+            const overlay = document.getElementById('battleOverlay');
+            const cdText = document.getElementById('countdownText');
+            const cdDesc = document.getElementById('countdownDesc');
+            overlay.style.opacity = '1';
+            overlay.style.pointerEvents = 'none';
+
+            const sequence = ['3', '2', '1', 'FIGHT!'];
+            cdText.textContent = 'READY';
+            cdDesc.textContent = 'ROUND 1 - ARENA UNLOCKED';
+
+            // 카운트다운 동안에도 배경/파이터가 보이도록 루프 미리 가동 (입력/충돌은 잠금)
+            gameState.isArenaRunning = true;
+            gameState.combatLive = false;
+            gameLoopId = requestAnimationFrame(gameArenaLoop);
+
+            let step = 0;
+            const tick = () => {
+                playSound('select');
+                cdText.textContent = sequence[step];
+                cdDesc.textContent = (sequence[step] === 'FIGHT!') ? 'GO!' : 'GET READY...';
+                step++;
+
+                if (step < sequence.length) {
+                    setTimeout(tick, 800);
+                } else {
+                    // FIGHT! → 전투 입력 활성화 + 오버레이 페이드아웃
+                    gameState.combatLive = true;
+                    setTimeout(() => {
+                        overlay.style.opacity = '0';
+                    }, 600);
+                }
+            };
+            setTimeout(tick, 700);
+        }
+
+        // 무기 선택 처리 함수 정의 (안전 복원 완료!)
+        function selectWeapon(weaponId) {
+            playSound('select');
+            
+            if (gameState.selectingPlayer === 1) {
+                gameState.p1Weapon = weaponId;
+            } else {
+                gameState.p2Weapon = weaponId;
+            }
+
+            resetSelectionCards();
+
+            const card = document.getElementById('card-' + weaponId);
+            if (weaponId === 'katana') card.classList.add('neon-border-cyan', 'scale-105');
+            else if (weaponId === 'bow') card.classList.add('neon-border-pink', 'scale-105');
+            else if (weaponId === 'hammer') card.classList.add('border-orange-400', 'shadow-[0_0_15px_rgba(251,146,60,0.3)]', 'scale-105');
+
+            const confirmBtn = document.getElementById('btnConfirmWeapon');
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            confirmBtn.classList.add('hover:scale-105', 'active:scale-95');
+        }
+
+        // 선택 카드 리셋 처리 함수 정의 (안전 복원 완료!)
+        function resetSelectionCards() {
+            document.querySelectorAll('.weapon-card').forEach(card => {
+                card.classList.remove('neon-border-pink', 'neon-border-cyan', 'border-orange-400', 'shadow-[0_0_15px_rgba(251,146,60,0.3)]', 'scale-105');
+            });
+        }
+
+        // 대시 및 대전 상대 로딩창으로 인도를 관할하는 오케스트레이터 정의 (안전 복원 완료!)
+        function triggerMatchLoading() {
+            changeScreen('MATCHMAKING');
+
+            const p1NameVal = document.getElementById('p1NameInput').value.trim();
+            gameState.p1Name = p1NameVal ? p1NameVal : "NINJA_1";
+
+            if (gameState.gameMode === 'PVP') {
+                const p2NameVal = document.getElementById('p2NameInput').value.trim();
+                gameState.p2Name = p2NameVal ? p2NameVal : "NINJA_2";
+            } else {
+                gameState.p2Name = botNames[Math.floor(Math.random() * botNames.length)];
+            }
+
+            document.getElementById('matchP1Name').textContent = gameState.p1Name;
+            document.getElementById('matchP1Wep').textContent = weaponStats[gameState.p1Weapon].name;
+            document.getElementById('matchP2Name').textContent = gameState.p2Name;
+            document.getElementById('matchP2Wep').textContent = weaponStats[gameState.p2Weapon].name;
+
+            const tips = [
+                "카타나(Katana)는 지형 발판 사이를 신속하게 점프 무빙하며 상대를 압박하는 데 아주 탁월합니다.",
+                "활(Bow)은 발판 위 고지대를 장악하고 대각선 아래로 화살을 퍼부어 상대의 접근을 전면 봉쇄할 수 있습니다.",
+                "해머(Hammer)는 지면뿐만 아니라 허공의 공중 발판에서도 하강 스패쉬 중력 충격파를 발동할 수 있습니다.",
+                "타이밍 가드는 상대 원거리 활 투사체도 반사 및 소멸시킬 수 있습니다."
+            ];
+            document.getElementById('loadingTip').textContent = tips[Math.floor(Math.random() * tips.length)];
+
+            setTimeout(() => {
+                initBattleField();
+            }, 2500);
+        }
+
+        // 선택 완료 후 처리 함수 정의
+        function confirmWeaponSelection() {
+            playSound('click');
+            if (gameState.selectingPlayer === 1) {
+                if (gameState.gameMode === 'PVP') {
+                    gameState.selectingPlayer = 2;
+                    resetSelectionCards();
+                    document.getElementById('selectScreenTitle').textContent = "PLAYER 2: SELECT WEAPON";
+                    document.getElementById('selectScreenTitle').className = "text-2xl font-black font-orbitron tracking-wider text-pink-500";
+                    const confirmBtn = document.getElementById('btnConfirmWeapon');
+                    confirmBtn.disabled = true;
+                    confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    gameState.p2Weapon = weaponKeys[Math.floor(Math.random() * weaponKeys.length)];
+                    triggerMatchLoading();
+                }
+            } else {
+                triggerMatchLoading();
+            }
+        }
+
+        // 화면 전환 전담 함수 정의
+        function changeScreen(screenId) {
+            playSound('click');
+            
+            const screens = {
+                'MAIN': 'screenMain',
+                'SELECT': 'screenSelect',
+                'MATCHMAKING': 'screenMatchmaking',
+                'BATTLE': 'screenBattle',
+                'RESULT': 'screenResult'
+            };
+
+            Object.values(screens).forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+
+            const targetId = screens[screenId.toUpperCase()];
+            if (targetId) {
+                document.getElementById(targetId).classList.remove('hidden');
+            }
+            
+            gameState.currentScreen = screenId.toUpperCase();
+
+            if (screenId === 'MAIN') {
+                gameState.p1Weapon = '';
+                gameState.p2Weapon = '';
+                gameState.selectingPlayer = 1;
+                resetSelectionCards();
+                document.getElementById('selectScreenTitle').textContent = "PLAYER 1: SELECT WEAPON";
+                document.getElementById('selectScreenTitle').className = "text-2xl font-black font-orbitron tracking-wider text-cyan-400";
+                const confirmBtn = document.getElementById('btnConfirmWeapon');
+                confirmBtn.disabled = true;
+                confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function selectGameMode(mode) {
+            playSound('select');
+            gameState.gameMode = mode;
+
+            const modeAiBtn = document.getElementById('modeAiBtn');
+            const modePvpBtn = document.getElementById('modePvpBtn');
+            const p2InputWrapper = document.getElementById('p2InputWrapper');
+            const p2NameInput = document.getElementById('p2NameInput');
+            const p2InputLabel = document.getElementById('p2InputLabel');
+            const p2ControlGuide = document.getElementById('p2ControlGuide');
+
+            if (mode === 'AI') {
+                modeAiBtn.className = "flex-1 py-4 bg-slate-900 border-2 border-cyan-500 text-cyan-400 rounded-xl font-orbitron font-bold tracking-wider transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(244,63,94,0.2)]";
+                modePvpBtn.className = "flex-1 py-4 bg-slate-900 border-2 border-slate-800 text-slate-400 rounded-xl font-orbitron font-bold tracking-wider transition-all transform hover:scale-105 active:scale-95";
+                
+                p2InputWrapper.classList.add('opacity-50');
+                p2NameInput.value = "CYBER_BOT";
+                p2NameInput.disabled = true;
+                p2InputLabel.textContent = "P2 OPPONENT (AI)";
+                p2ControlGuide.innerHTML = `🔴 <span class="text-pink-500 font-bold">P2 (AI):</span> 자동 컴퓨터 전투 연출`;
+            } else {
+                modePvpBtn.className = "flex-1 py-4 bg-slate-900 border-2 border-pink-500 text-pink-500 rounded-xl font-orbitron font-bold tracking-wider transition-all transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(244,63,94,0.2)]";
+                modeAiBtn.className = "flex-1 py-4 bg-slate-900 border-2 border-slate-800 text-slate-400 rounded-xl font-orbitron font-bold tracking-wider transition-all transform hover:scale-105 active:scale-95";
+                
+                p2InputWrapper.classList.remove('opacity-50');
+                p2NameInput.value = "NINJA_2";
+                p2NameInput.disabled = false;
+                p2InputLabel.textContent = "P2 CHALLENGER (LOCAL)";
+                p2ControlGuide.innerHTML = `🔴 <span class="text-pink-500 font-bold">P2 조작:</span> <b class="text-white">←/→</b> 이동 | <b class="text-white">↑</b> 점프 | <b class="text-white">K</b> 공격 | <b class="text-white">L</b> 방어`;
+            }
+        }
+
+        // ================= SAFETY BINDINGS & DOM READY INITIALIZATION =================
+        window.addEventListener('DOMContentLoaded', () => {
+            bgCanvas = document.getElementById('bgParticleCanvas');
+            bgCtx = bgCanvas.getContext('2d');
+            bCanvas = document.getElementById('battleCanvas');
+            bCtx = bCanvas.getContext('2d');
+
+            // [안전 연동 완료] 이제 resizeBgCanvas가 완벽히 전역 상단에 선언되었으므로 안심하고 호출 가능!
+            window.addEventListener('resize', resizeBgCanvas);
+            resizeBgCanvas();
+
+            for (let i = 0; i < 40; i++) {
+                bgParticles.push(new BackgroundParticle());
+            }
+            animateBg();
+
+            // P1 키보드 조작 이벤트 핸들러 바인딩
+            window.addEventListener('keydown', e => {
+                if (e.code in keys) {
+                    if (['Space', 'KeyW', 'KeyF', 'KeyG', 'KeyK', 'KeyL', 'ArrowUp'].includes(e.code)) {
+                        e.preventDefault();
+                    }
+
+                    const now = Date.now();
+                    if (gameState.isArenaRunning) {
+                        if (e.code === 'KeyD' && !keys.KeyD) {
+                            if (now - p1LastTapRight < doubleTapInterval) {
+                                triggerDash(p1, 1);
+                            }
+                            p1LastTapRight = now;
+                        }
+                        if (e.code === 'KeyA' && !keys.KeyA) {
+                            if (now - p1LastTapLeft < doubleTapInterval) {
+                                triggerDash(p1, -1);
+                            }
+                            p1LastTapLeft = now;
+                        }
+
+                        if (gameState.gameMode === 'PVP' && e.code === 'ArrowRight' && !keys.ArrowRight) {
+                            if (now - p2LastTapRight < doubleTapInterval) {
+                                triggerDash(p2, 1);
+                            }
+                            p2LastTapRight = now;
+                        }
+                        if (gameState.gameMode === 'PVP' && e.code === 'ArrowLeft' && !keys.ArrowLeft) {
+                            if (now - p2LastTapLeft < doubleTapInterval) {
+                                triggerDash(p2, -1);
+                            }
+                            p2LastTapLeft = now;
+                        }
+                    }
+
+                    keys[e.code] = true;
+                }
+            });
+
+            window.addEventListener('keyup', e => {
+                if (e.code in keys) {
+                    keys[e.code] = false;
+                }
+            });
+
+            // UI 버튼들의 마우스 클릭 이벤트 바인딩
+            document.getElementById('modeAiBtn').addEventListener('click', () => selectGameMode('AI'));
+            document.getElementById('modePvpBtn').addEventListener('click', () => selectGameMode('PVP'));
+
+            document.getElementById('btnStartChooseWeapon').addEventListener('click', () => changeScreen('SELECT'));
+            document.getElementById('btnBackToMain').addEventListener('click', () => changeScreen('MAIN'));
+            document.getElementById('btnConfirmWeapon').addEventListener('click', confirmWeaponSelection);
+
+            document.getElementById('card-katana').addEventListener('click', () => selectWeapon('katana'));
+            document.getElementById('card-bow').addEventListener('click', () => selectWeapon('bow'));
+            document.getElementById('card-hammer').addEventListener('click', () => selectWeapon('hammer'));
+
+            document.getElementById('btnResultSelectWeapon').addEventListener('click', () => changeScreen('SELECT'));
+            document.getElementById('btnResultMainMenu').addEventListener('click', () => changeScreen('MAIN'));
+
+            bCanvas.addEventListener('click', () => {
+                window.focus();
+            });
+        });
+    </script>
+</body>
+</html>
