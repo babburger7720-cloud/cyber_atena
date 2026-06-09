@@ -963,6 +963,7 @@
                 this.shieldStun = 0; 
 
                 this.dashCooldown = 0;
+                this.dashFrames = 0; // 대시 추진 지속 프레임 — 이 동안 이동 입력이 vx를 덮어쓰지 않음
 
                 this.scarfHistory = [];
                 for (let i = 0; i < 8; i++) {
@@ -981,6 +982,7 @@
 
             update() {
                 if (this.dashCooldown > 0) this.dashCooldown--;
+                if (this.dashFrames > 0) this.dashFrames--;
 
                 if (this.shieldStun > 0) {
                     this.shieldStun--;
@@ -1235,23 +1237,32 @@
                 
                 if (this.isAttacking) {
                     if (this.weaponId === 'katana') {
+                        const restAngle = this.direction * (Math.PI / 8);
+                        const windupAngle = -this.direction * (Math.PI / 3);
+                        const endAngle = this.direction * (Math.PI / 1.6);
                         if (this.attackActiveFrame <= 3) {
-                            attackAngle = -this.direction * (Math.PI / 3); 
-                        } 
-                        else {
-                            const progress = (this.attackActiveFrame - 3) / 5; 
-                            const startAngle = -this.direction * (Math.PI / 3);
-                            const endAngle = this.direction * (Math.PI / 1.6);
-                            attackAngle = startAngle + (endAngle - startAngle) * progress;
+                            // 윈드업: 쉬는 각도 → 뒤로 당김 (부드럽게 보간)
+                            const t = this.attackActiveFrame / 3;
+                            attackAngle = restAngle + (windupAngle - restAngle) * t;
+                        } else {
+                            // 베기: easeOut 으로 빠르게 그었다가 감속
+                            const progress = Math.min(1, (this.attackActiveFrame - 3) / 5);
+                            const eased = 1 - Math.pow(1 - progress, 2);
+                            attackAngle = windupAngle + (endAngle - windupAngle) * eased;
                         }
                     } else if (this.weaponId === 'hammer') {
+                        const restAngle = this.direction * (Math.PI / 8);
+                        const windupAngle = -this.direction * (Math.PI / 2.2);
+                        const endAngle = this.direction * (Math.PI / 1.5);
                         if (this.attackActiveFrame <= 5) {
-                            attackAngle = -this.direction * (Math.PI / 2.2);
+                            // 윈드업: 머리 위로 들어올림 (부드럽게 보간)
+                            const t = this.attackActiveFrame / 5;
+                            attackAngle = restAngle + (windupAngle - restAngle) * t;
                         } else {
-                            const progress = (this.attackActiveFrame - 5) / 10;
-                            const startAngle = -this.direction * (Math.PI / 2.2);
-                            const endAngle = this.direction * (Math.PI / 1.5);
-                            attackAngle = startAngle + (endAngle - startAngle) * progress;
+                            // 내리꽂기: easeIn 으로 묵직하게 가속
+                            const progress = Math.min(1, (this.attackActiveFrame - 5) / 10);
+                            const eased = progress * progress;
+                            attackAngle = windupAngle + (endAngle - windupAngle) * eased;
                         }
                     } else if (this.weaponId === 'bow') {
                         attackAngle = (this.direction * Math.PI / 6);
@@ -1262,20 +1273,20 @@
                 if (this.weaponId === 'katana') {
                     bCtx.save();
                     
-                    // 검 손잡이
+                    // 검 손잡이 (칼날 축과 일직선으로 정렬 — 꺾임 제거)
                     bCtx.strokeStyle = '#0f172a';
                     bCtx.lineWidth = 6;
                     bCtx.lineCap = 'round';
                     bCtx.beginPath();
                     bCtx.moveTo(0, 0);
-                    bCtx.lineTo(-this.direction * 14, 14);
+                    bCtx.lineTo(-this.direction * 15, 3);
                     bCtx.stroke();
 
                     bCtx.strokeStyle = weaponColor;
                     bCtx.lineWidth = 2.5;
                     bCtx.beginPath();
                     bCtx.moveTo(0, 0);
-                    bCtx.lineTo(-this.direction * 14, 14);
+                    bCtx.lineTo(-this.direction * 15, 3);
                     bCtx.stroke();
 
                     // 검 수호막 (Tsuba)
@@ -1535,10 +1546,12 @@
             const isPlayerHigh = p1.y < p2.y - 50;
 
             if (p2.weaponId === 'bow') {
-                if (dist < 180) {
-                    p2.vx = p2.direction * -p2.wepStats.moveSpeed;
-                } else if (dist > 350) {
-                    p2.vx = p2.direction * p2.wepStats.moveSpeed;
+                if (p2.dashFrames <= 0) {
+                    if (dist < 180) {
+                        p2.vx = p2.direction * -p2.wepStats.moveSpeed;
+                    } else if (dist > 350) {
+                        p2.vx = p2.direction * p2.wepStats.moveSpeed;
+                    }
                 }
                 
                 if (isPlayerHigh && Math.random() < 0.03 && p2.isGrounded) {
@@ -1550,9 +1563,11 @@
                 }
             } else {
                 if (dist > safeDistance) {
-                    if (p1.x < p2.x) p2.vx = -p2.wepStats.moveSpeed;
-                    else p2.vx = p2.wepStats.moveSpeed;
-                    
+                    if (p2.dashFrames <= 0) {
+                        if (p1.x < p2.x) p2.vx = -p2.wepStats.moveSpeed;
+                        else p2.vx = p2.wepStats.moveSpeed;
+                    }
+
                     if ((Math.random() < 0.02 || (isPlayerHigh && Math.random() < 0.06)) && p2.isGrounded) {
                         p2.jump();
                     }
@@ -1819,13 +1834,15 @@
             bCtx.shadowBlur = 0;
 
             if (gameState.combatLive) {
-            if (keys.KeyA) {
-                p1.vx = -p1.wepStats.moveSpeed;
-                p1.direction = -1;
-            }
-            if (keys.KeyD) {
-                p1.vx = p1.wepStats.moveSpeed;
-                p1.direction = 1;
+            if (p1.dashFrames <= 0) {
+                if (keys.KeyA) {
+                    p1.vx = -p1.wepStats.moveSpeed;
+                    p1.direction = -1;
+                }
+                if (keys.KeyD) {
+                    p1.vx = p1.wepStats.moveSpeed;
+                    p1.direction = 1;
+                }
             }
             if (keys.KeyW) {
                 p1.jump();
@@ -1841,13 +1858,15 @@
             }
 
             if (gameState.gameMode === 'PVP') {
-                if (keys.ArrowLeft) {
-                    p2.vx = -p2.wepStats.moveSpeed;
-                    p2.direction = -1;
-                }
-                if (keys.ArrowRight) {
-                    p2.vx = p2.wepStats.moveSpeed;
-                    p2.direction = 1;
+                if (p2.dashFrames <= 0) {
+                    if (keys.ArrowLeft) {
+                        p2.vx = -p2.wepStats.moveSpeed;
+                        p2.direction = -1;
+                    }
+                    if (keys.ArrowRight) {
+                        p2.vx = p2.wepStats.moveSpeed;
+                        p2.direction = 1;
+                    }
                 }
                 if (keys.ArrowUp) {
                     p2.jump();
@@ -1963,6 +1982,7 @@
 
             fighter.direction = dir;
             fighter.vx = dir * fighter.wepStats.moveSpeed * 4.2; // 순간 가속 추진
+            fighter.dashFrames = 8; // 대시 추진이 이동 입력에 덮어써지지 않도록 보호
             fighter.dashCooldown = 45; // 약 0.75초 재사용 대기
 
             playSound('dash');
