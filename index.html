@@ -311,7 +311,7 @@
                         <p class="text-[10px] text-slate-400 mb-2">대미지가 20으로 조율되었지만 최고의 넉백을 지녔습니다.</p>
                         <!-- Weapon Spec Info -->
                         <div class="border-t border-slate-800/80 pt-2 text-left text-[10px] space-y-1 font-orbitron">
-                            <div class="flex justify-between"><span class="text-slate-500">DAMAGE (대미지):</span> <span class="text-orange-400 font-bold">5 HP</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">DAMAGE (대미지):</span> <span class="text-orange-400 font-bold">8 HP</span></div>
                             <div class="flex justify-between"><span class="text-slate-500">ATTACK SPD:</span> <span class="text-orange-400">★☆☆☆☆</span></div>
                             <div class="flex justify-between"><span class="text-slate-500">REACH (충격파 범위):</span> <span class="text-orange-400">★★★★★ (90px)</span></div>
                         </div>
@@ -486,12 +486,12 @@
             hammer: {
                 name: 'GRAVITY HAMMER',
                 color: '#fb923c',
-                damage: 5,      // 망치 대미지 5 고정
-                speed: 38,      
-                reach: 90,      
+                damage: 8,      // 망치 대미지 8 고정
+                speed: 38,
+                reach: 90,
                 height: 35,
                 moveSpeed: 3.0,
-                jumpForce: -10.0,
+                jumpForce: -13.0, // 무게(0.6)가 무거워도 점프 높이를 다른 무기와 동등하게 (도달 ≈141)
                 weight: 0.60
             }
         };
@@ -1740,7 +1740,7 @@
             if (attacker.weaponId === 'katana') {
                 finalDamage = isKatanaTip ? 15 : 8;
             } else if (attacker.weaponId === 'hammer') {
-                finalDamage = 5;
+                finalDamage = 8;
             } else if (attacker.weaponId === 'bow') {
                 let baseDmg = 6;
                 if (isCritArrow) {
