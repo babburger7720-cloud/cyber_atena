@@ -218,6 +218,36 @@
             </button>
         </div>
 
+        <!-- ================= PLAY MODE SELECT SCREEN ================= -->
+        <div id="screenMode" class="hidden flex-1 flex flex-col justify-between">
+            <div class="text-center space-y-1">
+                <h2 class="text-2xl font-black font-orbitron tracking-wider text-amber-400">SELECT MODE</h2>
+                <p class="text-slate-400 text-xs">연출 모드를 선택하세요 — 다음 단계에서 전장과 무기를 고릅니다.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 my-auto px-4 max-w-3xl mx-auto w-full">
+                <!-- Normal mode -->
+                <div id="mode-normal" class="mode-card group relative bg-slate-900/60 border-2 border-slate-800 rounded-2xl p-5 flex flex-col items-center text-center cursor-pointer transition-all duration-300 hover:border-slate-400 hover:bg-slate-900/95 transform hover:-translate-y-1">
+                    <div class="text-5xl mb-2">⚔️</div>
+                    <h3 class="text-lg font-black font-orbitron text-slate-200">NORMAL</h3>
+                    <p class="text-[11px] text-slate-400 mt-1">기존과 동일한 일반 대전. 군더더기 없는 순수 전투.</p>
+                </div>
+
+                <!-- Kill cam mode -->
+                <div id="mode-killcam" class="mode-card group relative bg-slate-900/60 border-2 border-slate-800 rounded-2xl p-5 flex flex-col items-center text-center cursor-pointer transition-all duration-300 hover:border-rose-400 hover:bg-slate-900/95 transform hover:-translate-y-1">
+                    <div class="absolute top-2.5 right-2.5 px-1.5 py-0.5 bg-rose-500/20 text-rose-300 text-[9px] rounded border border-rose-500/30 font-bold font-orbitron">CINEMATIC</div>
+                    <div class="text-5xl mb-2">🎬</div>
+                    <h3 class="text-lg font-black font-orbitron text-rose-300">KILL CAM</h3>
+                    <p class="text-[11px] text-slate-400 mt-1">처치 순간 <b class="text-rose-300">슬로모션 줌 하이라이트</b>가 멋지게 재생됩니다.</p>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center px-4">
+                <button id="btnModeBackMain" class="text-slate-400 hover:text-white font-orbitron font-bold text-sm transition-colors">← MAIN</button>
+                <button id="btnConfirmMode" class="px-8 py-3 bg-gradient-to-r from-amber-500 to-orange-600 rounded-lg opacity-50 cursor-not-allowed font-orbitron font-bold text-sm tracking-wider" disabled>CONFIRM MODE →</button>
+            </div>
+        </div>
+
         <!-- ================= MAP SELECT SCREEN ================= -->
         <div id="screenMap" class="hidden flex-1 flex flex-col justify-between">
             <div class="text-center space-y-1">
@@ -637,7 +667,8 @@
             p2Name: 'CYBER_BOT',
             p1Weapon: '',
             p2Weapon: '',
-            mapId: 'arena',   // 선택한 전장 (arena | hazard)
+            mapId: 'arena',          // 선택한 전장 (arena | hazard)
+            killcamEnabled: false,   // 연출 모드 — KO 시 킬캠 재생 여부
             selectingPlayer: 1,
             isArenaRunning: false,
             combatLive: false, // 카운트다운 종료(FIGHT!) 후에만 입력/충돌 활성화
@@ -676,6 +707,12 @@
         const SPIKE_DAMAGE = 5;      // 가시: 닿는 순간 1회 데미지
         const SPIKE_WIDTH = 22;      // 벽에서 돌출되는 가시 영역 폭(px)
         const LAVA_DAMAGE = 5;       // 용암: 닿는 순간 1회 데미지 (+위로 튕김)
+
+        // 킬캠(슬로모션 줌 하이라이트) 상태 & 튜닝
+        const KILLCAM_DURATION = 110; // 킬캠 총 길이(실프레임, 약 1.8초)
+        const KILLCAM_ZOOM = 2.4;     // 패배자 클로즈업 줌 배율
+        const KILLCAM_BAR = 56;       // 상하 레터박스 바 높이(px)
+        let killcam = { active: false, timer: 0, frame: 0, zoom: 1, bar: 0, winner: null, loser: null };
 
         const keys = {
             KeyA: false, KeyD: false, KeyW: false, KeyF: false, KeyG: false, KeyE: false,
@@ -822,6 +859,15 @@
                     nGain.gain.linearRampToValueAtTime(0.001, now + 0.12);
                     nOsc.start(now);
                     nOsc.stop(now + 0.12);
+                } else if (type === 'ko') {
+                    // 킬캠 진입 임팩트 — 묵직한 저음 붐
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(35, now + 0.5);
+                    gainNode.gain.setValueAtTime(0.28, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.55);
+                    osc.start(now);
+                    osc.stop(now + 0.55);
                 } else if (type === 'form_switch') {
                     osc.type = 'triangle';
                     osc.frequency.setValueAtTime(440, now);
@@ -2498,6 +2544,20 @@
         function gameArenaLoop() {
             if (!gameState.isArenaRunning) return;
 
+            // 킬캠 진행: 줌·레터박스 보간 + 타이머. 종료되면 결과 화면으로 마무리
+            if (killcam.active) {
+                killcam.frame++;
+                killcam.timer--;
+                killcam.zoom += (KILLCAM_ZOOM - killcam.zoom) * 0.1;
+                killcam.bar += (KILLCAM_BAR - killcam.bar) * 0.18;
+                if (killcam.timer <= 0) {
+                    finalizeBattle(killcam.winner);
+                    return;
+                }
+            }
+            // 슬로모션: 킬캠 중에는 3프레임에 1번만 물리/엔티티 갱신 (≈0.33배속)
+            const advance = !killcam.active || (killcam.frame % 3 === 0);
+
             bCtx.save();
             if (shakeFrames > 0) {
                 const dx = (Math.random() * 8 - 4);
@@ -2507,6 +2567,20 @@
             }
 
             bCtx.clearRect(0, 0, bCanvas.width, bCanvas.height);
+
+            // 킬캠 줌: 패배자에게 카메라를 집중 (화면 밖으로 새지 않게 클램프)
+            if (killcam.active && killcam.loser) {
+                const Z = killcam.zoom;
+                const halfW = bCanvas.width / (2 * Z);
+                const halfH = bCanvas.height / (2 * Z);
+                let fx = killcam.loser.x + killcam.loser.width / 2;
+                let fy = killcam.loser.y + killcam.loser.height / 2;
+                fx = Math.max(halfW, Math.min(bCanvas.width - halfW, fx));
+                fy = Math.max(halfH, Math.min(bCanvas.height - halfH, fy));
+                bCtx.translate(bCanvas.width / 2, bCanvas.height / 2);
+                bCtx.scale(Z, Z);
+                bCtx.translate(-fx, -fy);
+            }
 
             bCtx.strokeStyle = '#111029';
             bCtx.lineWidth = 1;
@@ -2604,12 +2678,14 @@
             }
             } // end combatLive gate
 
-            p1.update();
-            p2.update();
+            if (advance) {
+                p1.update();
+                p2.update();
+            }
 
             for (let i = projectiles.length - 1; i >= 0; i--) {
                 const proj = projectiles[i];
-                proj.update();
+                if (advance) proj.update();
                 if (!proj.active) {
                     projectiles.splice(i, 1);
                 } else {
@@ -2630,7 +2706,7 @@
             // 마법사 낙뢰: 텔레그래프 → 낙뢰 → 섬광 소멸 (충돌 판정 전에 갱신해 justStruck 동기화)
             for (let i = lightningStrikes.length - 1; i >= 0; i--) {
                 const strike = lightningStrikes[i];
-                strike.update();
+                if (advance) strike.update();
                 strike.draw();
                 if (strike.struck && strike.flash <= 0) {
                     lightningStrikes.splice(i, 1);
@@ -2643,7 +2719,7 @@
             }
 
             for (let i = battleParticles.length - 1; i >= 0; i--) {
-                battleParticles[i].update();
+                if (advance) battleParticles[i].update();
                 battleParticles[i].draw();
                 if (battleParticles[i].alpha <= 0) {
                     battleParticles.splice(i, 1);
@@ -2651,7 +2727,7 @@
             }
 
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
-                floatingTexts[i].update();
+                if (advance) floatingTexts[i].update();
                 floatingTexts[i].draw();
                 if (floatingTexts[i].life <= 0) {
                     floatingTexts.splice(i, 1);
@@ -2663,16 +2739,99 @@
 
             bCtx.restore();
 
+            // 킬캠 영화 오버레이 (레터박스 + K.O. 텍스트) — 화면 좌표계에 그림
+            if (killcam.active) drawKillcamOverlay();
+
             if (gameState.isArenaRunning) {
                 gameLoopId = requestAnimationFrame(gameArenaLoop);
             }
         }
 
+        // 킬캠 오버레이: 상하 레터박스 + KILL CAM 라벨 + 중앙 K.O.
+        function drawKillcamOverlay() {
+            const w = bCanvas.width, h = bCanvas.height;
+            bCtx.save();
+            // 레터박스 바
+            bCtx.fillStyle = '#000';
+            bCtx.fillRect(0, 0, w, killcam.bar);
+            bCtx.fillRect(0, h - killcam.bar, w, killcam.bar);
+
+            const labelAlpha = Math.min(1, killcam.bar / 32);
+            bCtx.globalAlpha = labelAlpha;
+            bCtx.textBaseline = 'middle';
+            // 좌상단 KILL CAM
+            bCtx.fillStyle = '#f43f5e';
+            bCtx.font = "900 16px 'Orbitron', sans-serif";
+            bCtx.textAlign = 'left';
+            const blink = 0.6 + Math.sin(killcam.frame / 5) * 0.4;
+            bCtx.globalAlpha = labelAlpha * blink;
+            bCtx.fillText('● KILL CAM', 18, killcam.bar / 2);
+            // 우상단 처치 정보
+            bCtx.globalAlpha = labelAlpha;
+            bCtx.fillStyle = '#e2e8f0';
+            bCtx.font = "700 12px 'Orbitron', sans-serif";
+            bCtx.textAlign = 'right';
+            if (killcam.winner && killcam.loser) {
+                bCtx.fillText(`${killcam.winner.name}  ▶  ${killcam.loser.name}`, w - 18, killcam.bar / 2);
+            }
+
+            // 중앙 K.O. (등장 시 살짝 커졌다 안착)
+            const koProg = Math.min(1, killcam.frame / 12);
+            const koScale = 1 + (1 - koProg) * 0.7;
+            bCtx.globalAlpha = koProg;
+            bCtx.textAlign = 'center';
+            bCtx.save();
+            bCtx.translate(w / 2, h * 0.30);
+            bCtx.scale(koScale, koScale);
+            bCtx.font = "900 66px 'Orbitron', sans-serif";
+            bCtx.fillStyle = '#ffffff';
+            bCtx.shadowColor = killcam.winner ? killcam.winner.wepStats.color : '#f43f5e';
+            bCtx.shadowBlur = 28;
+            bCtx.fillText('K.O.', 0, 0);
+            bCtx.restore();
+            bCtx.restore();
+        }
+
+        // KO 진입점 — 연출 모드면 킬캠을 먼저 재생, 아니면 즉시 결과로
         function finishBattle(winnerFighter) {
+            if (killcam.active) return; // 이미 킬캠 진행 중이면 중복 무시
+            if (gameState.killcamEnabled) {
+                startKillcam(winnerFighter);
+            } else {
+                finalizeBattle(winnerFighter);
+            }
+        }
+
+        // 킬캠 시작: 루프는 유지한 채 입력/충돌만 정지하고 슬로모션 줌 진입
+        function startKillcam(winnerFighter) {
+            gameState.combatLive = false;
+            killcam.active = true;
+            killcam.frame = 0;
+            killcam.timer = KILLCAM_DURATION;
+            killcam.zoom = 1.2;
+            killcam.bar = 0;
+            killcam.winner = winnerFighter;
+            killcam.loser = (winnerFighter === p1) ? p2 : p1;
+            shakeFrames = 22;
+            playSound('ko');
+            haptic([0, 40, 30, 120]);
+
+            const flashColor = winnerFighter.wepStats.color;
+            for (let i = 0; i < 24; i++) {
+                battleParticles.push(new CombatSpark(
+                    killcam.loser.x + killcam.loser.width / 2,
+                    killcam.loser.y + killcam.loser.height / 2,
+                    flashColor
+                ));
+            }
+        }
+
+        function finalizeBattle(winnerFighter) {
             gameState.isArenaRunning = false;
             gameState.combatLive = false;
+            killcam.active = false;
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
-            
+
             playSound('victory');
             haptic([0, 70, 50, 70]);
 
@@ -2766,6 +2925,7 @@
             floatingTexts = [];
             shockwavePillars = [];
             lightningStrikes = [];
+            killcam.active = false; // 이전 매치 킬캠 상태 클린업
             shakeFrames = 0;
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
 
@@ -2894,6 +3054,33 @@
             changeScreen('SELECT');
         }
 
+        // ===== 연출 모드(일반/킬캠) 선택 처리 =====
+        function resetModeCards() {
+            document.querySelectorAll('.mode-card').forEach(card => {
+                card.classList.remove('border-slate-400', 'border-rose-400', 'shadow-[0_0_18px_rgba(148,163,184,0.4)]', 'shadow-[0_0_18px_rgba(244,63,94,0.4)]', 'scale-105');
+            });
+        }
+
+        function selectPlayMode(mode) {
+            playSound('select');
+            gameState.killcamEnabled = (mode === 'killcam');
+            resetModeCards();
+
+            const card = document.getElementById('mode-' + mode);
+            if (mode === 'killcam') card.classList.add('border-rose-400', 'shadow-[0_0_18px_rgba(244,63,94,0.4)]', 'scale-105');
+            else card.classList.add('border-slate-400', 'shadow-[0_0_18px_rgba(148,163,184,0.4)]', 'scale-105');
+
+            const confirmBtn = document.getElementById('btnConfirmMode');
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            confirmBtn.classList.add('hover:scale-105', 'active:scale-95');
+        }
+
+        function confirmMode() {
+            playSound('click');
+            changeScreen('MAP');
+        }
+
         // 대시 및 대전 상대 로딩창으로 인도를 관할하는 오케스트레이터 정의 (안전 복원 완료!)
         function triggerMatchLoading() {
             changeScreen('MATCHMAKING');
@@ -2954,6 +3141,7 @@
             
             const screens = {
                 'MAIN': 'screenMain',
+                'MODE': 'screenMode',
                 'MAP': 'screenMap',
                 'SELECT': 'screenSelect',
                 'MATCHMAKING': 'screenMatchmaking',
@@ -2980,12 +3168,17 @@
                 gameState.p1Weapon = '';
                 gameState.p2Weapon = '';
                 gameState.mapId = 'arena';
+                gameState.killcamEnabled = false;
                 gameState.selectingPlayer = 1;
                 resetSelectionCards();
                 resetMapCards();
+                resetModeCards();
                 const confirmMapBtn = document.getElementById('btnConfirmMap');
                 confirmMapBtn.disabled = true;
                 confirmMapBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                const confirmModeBtn = document.getElementById('btnConfirmMode');
+                confirmModeBtn.disabled = true;
+                confirmModeBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 document.getElementById('selectScreenTitle').textContent = "PLAYER 1: SELECT WEAPON";
                 document.getElementById('selectScreenTitle').className = "text-2xl font-black font-orbitron tracking-wider text-cyan-400";
                 const confirmBtn = document.getElementById('btnConfirmWeapon');
@@ -3099,15 +3292,21 @@
             document.getElementById('modeAiBtn').addEventListener('click', () => selectGameMode('AI'));
             document.getElementById('modePvpBtn').addEventListener('click', () => selectGameMode('PVP'));
 
-            document.getElementById('btnStartChooseWeapon').addEventListener('click', () => changeScreen('MAP'));
+            document.getElementById('btnStartChooseWeapon').addEventListener('click', () => changeScreen('MODE'));
             document.getElementById('btnBackToMain').addEventListener('click', () => changeScreen('MAP'));
             document.getElementById('btnConfirmWeapon').addEventListener('click', confirmWeaponSelection);
+
+            // 연출 모드 선택 화면 바인딩
+            document.getElementById('mode-normal').addEventListener('click', () => selectPlayMode('normal'));
+            document.getElementById('mode-killcam').addEventListener('click', () => selectPlayMode('killcam'));
+            document.getElementById('btnConfirmMode').addEventListener('click', confirmMode);
+            document.getElementById('btnModeBackMain').addEventListener('click', () => changeScreen('MAIN'));
 
             // 맵 선택 화면 바인딩
             document.getElementById('map-arena').addEventListener('click', () => selectMap('arena'));
             document.getElementById('map-hazard').addEventListener('click', () => selectMap('hazard'));
             document.getElementById('btnConfirmMap').addEventListener('click', confirmMap);
-            document.getElementById('btnMapBackMain').addEventListener('click', () => changeScreen('MAIN'));
+            document.getElementById('btnMapBackMain').addEventListener('click', () => changeScreen('MODE'));
 
             document.getElementById('card-katana').addEventListener('click', () => selectWeapon('katana'));
             document.getElementById('card-bow').addEventListener('click', () => selectWeapon('bow'));
