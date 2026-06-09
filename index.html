@@ -476,7 +476,7 @@
                 name: 'PLASMA BOW',
                 color: '#f43f5e',
                 damage: 6,      // 활 기본 대미지 6 고정
-                speed: 18,
+                speed: 23,      // 발사 쿨다운 — 공격속도 0.8배 (18 → 23)
                 reach: 0,       
                 height: 10,
                 moveSpeed: 3.8,
@@ -957,7 +957,8 @@
                 this.isAttacking = false;
                 this.attackCooldown = 0;
                 this.attackActiveFrame = 0;
-                
+                this.hasHit = false; // 한 번 휘두를 때 데미지 1회만 적용하기 위한 플래그
+
                 this.isShielding = false;
                 this.shieldStun = 0; 
 
@@ -1082,6 +1083,7 @@
                 
                 this.isAttacking = true;
                 this.attackActiveFrame = 0;
+                this.hasHit = false; // 새 공격 시작 시 히트 플래그 초기화
                 this.attackCooldown = this.wepStats.speed;
                 
                 if (this.weaponId === 'katana') {
@@ -1575,7 +1577,7 @@
             if (!p1 || !p2) return;
 
             // 공격 판정 최적화: 휘두르는 동작에 맞춰 판정 범위 설정
-            if (p1.isAttacking && p1.attackActiveFrame >= 4 && p1.attackActiveFrame <= 7 && p1.weaponId !== 'bow') { 
+            if (p1.isAttacking && !p1.hasHit && p1.attackActiveFrame >= 4 && p1.attackActiveFrame <= 7 && p1.weaponId !== 'bow') {
                 const p1ReachX = (p1.direction > 0) ? p1.x + p1.width : p1.x - p1.wepStats.reach;
                 
                 const attackRect = {
@@ -1602,10 +1604,11 @@
                         }
                     }
                     applyCombatDamage(p1, p2, false, isKatanaTip);
+                    p1.hasHit = true; // 이번 휘두름의 데미지 1회 적용 완료
                 }
             }
 
-            if (p2.isAttacking && p2.attackActiveFrame >= 4 && p2.attackActiveFrame <= 7 && p2.weaponId !== 'bow') { 
+            if (p2.isAttacking && !p2.hasHit && p2.attackActiveFrame >= 4 && p2.attackActiveFrame <= 7 && p2.weaponId !== 'bow') { 
                 const p2ReachX = (p2.direction > 0) ? p2.x + p2.width : p2.x - p2.wepStats.reach;
                 
                 const attackRect = {
@@ -1632,6 +1635,7 @@
                         }
                     }
                     applyCombatDamage(p2, p1, false, isKatanaTip);
+                    p2.hasHit = true; // 이번 휘두름의 데미지 1회 적용 완료
                 }
             }
 
