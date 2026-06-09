@@ -311,7 +311,7 @@
                         <p class="text-[10px] text-slate-400 mb-2">대미지가 20으로 조율되었지만 최고의 넉백을 지녔습니다.</p>
                         <!-- Weapon Spec Info -->
                         <div class="border-t border-slate-800/80 pt-2 text-left text-[10px] space-y-1 font-orbitron">
-                            <div class="flex justify-between"><span class="text-slate-500">DAMAGE (대미지):</span> <span class="text-orange-400 font-bold">20 HP</span></div>
+                            <div class="flex justify-between"><span class="text-slate-500">DAMAGE (대미지):</span> <span class="text-orange-400 font-bold">10 HP</span></div>
                             <div class="flex justify-between"><span class="text-slate-500">ATTACK SPD:</span> <span class="text-orange-400">★☆☆☆☆</span></div>
                             <div class="flex justify-between"><span class="text-slate-500">REACH (충격파 범위):</span> <span class="text-orange-400">★★★★★ (90px)</span></div>
                         </div>
@@ -486,7 +486,7 @@
             hammer: {
                 name: 'GRAVITY HAMMER',
                 color: '#fb923c',
-                damage: 20,      // 망치 대미지 20 고정
+                damage: 10,      // 망치 대미지 10 고정
                 speed: 38,      
                 reach: 90,      
                 height: 35,
@@ -1429,9 +1429,8 @@
                     bCtx.arc(this.direction * 26, 0, 3.5, 0, Math.PI * 2);
                     bCtx.stroke();
 
-                    // 자루 끝자락을 기준으로 수직 정렬을 잡기 위해 이동 및 -90도 회전
+                    // 자루 끝자락으로 이동 — 헤드를 자루에 직각(수직)으로 정렬하여 망치 형태 유지
                     bCtx.translate(this.direction * 40, 0);
-                    bCtx.rotate(this.direction * -Math.PI / 4);
 
                     // 다크 메탈 해머 헤드 본체 바디
                     const headX = -10; 
@@ -1713,7 +1712,7 @@
             if (attacker.weaponId === 'katana') {
                 finalDamage = isKatanaTip ? 15 : 8;
             } else if (attacker.weaponId === 'hammer') {
-                finalDamage = 20;
+                finalDamage = 10;
             } else if (attacker.weaponId === 'bow') {
                 let baseDmg = 6;
                 if (isCritArrow) {
