@@ -672,6 +672,7 @@
             selectingPlayer: 1,
             isArenaRunning: false,
             combatLive: false, // 카운트다운 종료(FIGHT!) 후에만 입력/충돌 활성화
+            finalizing: false, // 결과 전환 진행 중 (중복 방지)
             winner: ''
         };
 
@@ -859,6 +860,24 @@
                     nGain.gain.linearRampToValueAtTime(0.001, now + 0.12);
                     nOsc.start(now);
                     nOsc.stop(now + 0.12);
+                } else if (type === 'shatter') {
+                    // 산산조각 — 유리 깨지는 듯한 고음 크랙 + 노이즈
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(1400, now);
+                    osc.frequency.exponentialRampToValueAtTime(280, now + 0.18);
+                    gainNode.gain.setValueAtTime(0.14, now);
+                    gainNode.gain.linearRampToValueAtTime(0.001, now + 0.22);
+                    osc.start(now);
+                    osc.stop(now + 0.22);
+                    const c2 = audioCtx.createOscillator();
+                    const g2 = audioCtx.createGain();
+                    c2.type = 'triangle';
+                    c2.frequency.setValueAtTime(2200, now);
+                    c2.frequency.exponentialRampToValueAtTime(600, now + 0.12);
+                    c2.connect(g2); g2.connect(audioCtx.destination);
+                    g2.gain.setValueAtTime(0.1, now);
+                    g2.gain.linearRampToValueAtTime(0.001, now + 0.15);
+                    c2.start(now); c2.stop(now + 0.15);
                 } else if (type === 'ko') {
                     // 킬캠 진입 임팩트 — 묵직한 저음 붐
                     osc.type = 'sawtooth';
@@ -1000,6 +1019,63 @@
                 bCtx.fillStyle = this.color;
                 bCtx.beginPath();
                 bCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                bCtx.fill();
+                bCtx.restore();
+            }
+        }
+
+        // 사망 시 캐릭터가 산산조각 — 각진 파편 조각 (battleParticles 루프와 호환: update/draw/alpha)
+        class DebrisShard {
+            constructor(x, y, color, baseVx = 0, baseVy = 0) {
+                this.x = x;
+                this.y = y;
+                const ang = Math.random() * Math.PI * 2;
+                const spd = 2 + Math.random() * 7;
+                this.vx = Math.cos(ang) * spd + baseVx;
+                this.vy = Math.sin(ang) * spd - 3 + baseVy; // 살짝 위로 터짐
+                this.color = color;
+                this.size = 3 + Math.random() * 7;
+                this.rot = Math.random() * Math.PI * 2;
+                this.vr = (Math.random() - 0.5) * 0.45;
+                this.alpha = 1;
+                this.life = 55 + Math.random() * 30;
+                this.maxLife = this.life;
+                // 각진 파편 꼭짓점
+                this.verts = [];
+                const n = 3 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < n; i++) {
+                    const a = (i / n) * Math.PI * 2 + Math.random() * 0.7;
+                    const r = this.size * (0.55 + Math.random() * 0.7);
+                    this.verts.push({ x: Math.cos(a) * r, y: Math.sin(a) * r });
+                }
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.4;     // 중력
+                this.vx *= 0.99;
+                this.rot += this.vr;
+                this.life--;
+                this.alpha = Math.max(0, this.life / this.maxLife);
+                const floorY = bCanvas.height - 40;
+                if (this.y > floorY) { // 바닥 튕김
+                    this.y = floorY;
+                    this.vy *= -0.42;
+                    this.vx *= 0.7;
+                    this.vr *= 0.7;
+                }
+            }
+            draw() {
+                bCtx.save();
+                bCtx.globalAlpha = this.alpha;
+                bCtx.translate(this.x, this.y);
+                bCtx.rotate(this.rot);
+                bCtx.fillStyle = this.color;
+                bCtx.shadowColor = this.color;
+                bCtx.shadowBlur = 8;
+                bCtx.beginPath();
+                this.verts.forEach((v, i) => { if (i === 0) bCtx.moveTo(v.x, v.y); else bCtx.lineTo(v.x, v.y); });
+                bCtx.closePath();
                 bCtx.fill();
                 bCtx.restore();
             }
@@ -1403,6 +1479,8 @@
                 this.inSpike = false;
                 this.inLava = false;
 
+                this.shattered = false; // 사망 시 산산조각 — 이후 본체는 갱신/렌더 안 함
+
                 this.scarfHistory = [];
                 for (let i = 0; i < 8; i++) {
                     this.scarfHistory.push({ x: this.x, y: this.y + 12 });
@@ -1419,6 +1497,7 @@
             }
 
             update() {
+                if (this.shattered) return; // 산산조각 난 캐릭터는 물리/상태 갱신 정지
                 if (this.dashCooldown > 0) this.dashCooldown--;
                 if (this.dashFrames > 0) this.dashFrames--;
 
@@ -1640,6 +1719,8 @@
             }
 
             draw() {
+                if (this.shattered) return; // 산산조각 후에는 본체 대신 파편만 보임
+
                 bCtx.save();
 
                 // 캐릭터 전체(몸·바이저·무기·스카프)를 발 기준으로 균일 확대 — 비율 유지하며 조금 더 크게
@@ -2544,19 +2625,18 @@
         function gameArenaLoop() {
             if (!gameState.isArenaRunning) return;
 
-            // 킬캠 진행: 줌·레터박스 보간 + 타이머. 종료되면 결과 화면으로 마무리
+            // 킬캠 진행: 줌·레터박스 보간 + 타이머. 종료 시 결과 전환을 예약하되 줌/오버레이는 유지
             if (killcam.active) {
                 killcam.frame++;
-                killcam.timer--;
-                killcam.zoom += (KILLCAM_ZOOM - killcam.zoom) * 0.1;
-                killcam.bar += (KILLCAM_BAR - killcam.bar) * 0.18;
-                if (killcam.timer <= 0) {
-                    finalizeBattle(killcam.winner);
-                    return;
+                if (killcam.timer > 0) {
+                    killcam.timer--;
+                    killcam.zoom += (KILLCAM_ZOOM - killcam.zoom) * 0.1;
+                    killcam.bar += (KILLCAM_BAR - killcam.bar) * 0.18;
+                    if (killcam.timer === 0) finalizeBattle(killcam.winner); // finalizing 가드로 1회만
                 }
             }
-            // 슬로모션: 킬캠 중에는 3프레임에 1번만 물리/엔티티 갱신 (≈0.33배속)
-            const advance = !killcam.active || (killcam.frame % 3 === 0);
+            // 슬로모션: 킬캠 중에는 2프레임에 1번만 물리/엔티티 갱신 (0.5배속, 더 부드럽게)
+            const advance = !killcam.active || (killcam.frame % 2 === 0);
 
             bCtx.save();
             if (shakeFrames > 0) {
@@ -2792,9 +2872,34 @@
             bCtx.restore();
         }
 
-        // KO 진입점 — 연출 모드면 킬캠을 먼저 재생, 아니면 즉시 결과로
+        // 캐릭터를 산산조각 — 본체를 파편 조각으로 분해
+        function shatterFighter(f) {
+            if (!f || f.shattered) return;
+            const baseVx = f.vx * 0.5, baseVy = Math.min(0, f.vy) * 0.5; // 넉백 방향 일부 계승
+            f.shattered = true;
+            f.vx = 0; f.vy = 0;
+
+            const theme = (f.id === 1) ? '#06b6d4' : '#f43f5e';
+            const palette = [theme, theme, theme, '#ffffff', '#0f172a', '#1e293b']; // 무기색/슈트색 섞기
+            const cx = f.x + f.width / 2;
+            const cy = f.y + f.height / 2;
+            for (let i = 0; i < 26; i++) {
+                const px = f.x + Math.random() * f.width;
+                const py = f.y + Math.random() * f.height;
+                battleParticles.push(new DebrisShard(px, py, palette[i % palette.length], baseVx, baseVy));
+            }
+            // 흰 섬광 버스트
+            for (let i = 0; i < 16; i++) battleParticles.push(new CombatSpark(cx, cy, '#ffffff'));
+            playSound('shatter');
+            shakeFrames = Math.max(shakeFrames, 16);
+            haptic(80);
+        }
+
+        // KO 진입점 — 패배자를 산산조각낸 뒤, 연출 모드면 킬캠 재생 / 아니면 결과로
         function finishBattle(winnerFighter) {
-            if (killcam.active) return; // 이미 킬캠 진행 중이면 중복 무시
+            if (killcam.active || gameState.finalizing) return; // 중복 진입 방지
+            const loser = (winnerFighter === p1) ? p2 : p1;
+            shatterFighter(loser);
             if (gameState.killcamEnabled) {
                 startKillcam(winnerFighter);
             } else {
@@ -2827,10 +2932,9 @@
         }
 
         function finalizeBattle(winnerFighter) {
-            gameState.isArenaRunning = false;
+            if (gameState.finalizing) return; // 한 번만 실행 (중복 결과 전환 방지)
+            gameState.finalizing = true;
             gameState.combatLive = false;
-            killcam.active = false;
-            if (gameLoopId) cancelAnimationFrame(gameLoopId);
 
             playSound('victory');
             haptic([0, 70, 50, 70]);
@@ -2838,13 +2942,17 @@
             const flashColor = winnerFighter.wepStats.color;
             for (let i = 0; i < 5; i++) {
                 battleParticles.push(new CombatSpark(
-                    bCanvas.width / 2 + (Math.random() * 300 - 150), 
-                    bCanvas.height / 2 + (Math.random() * 150 - 75), 
+                    bCanvas.width / 2 + (Math.random() * 300 - 150),
+                    bCanvas.height / 2 + (Math.random() * 150 - 75),
                     flashColor
                 ));
             }
 
+            // 루프는 잠시 더 돌려 파편(산산조각) 애니메이션을 보여준 뒤 결과 화면으로
             setTimeout(() => {
+                gameState.isArenaRunning = false;
+                killcam.active = false;
+                if (gameLoopId) cancelAnimationFrame(gameLoopId);
                 document.getElementById('resWinnerName').textContent = winnerFighter.name;
                 document.getElementById('resMatchMode').textContent = (gameState.gameMode === 'AI') ? "VS COMPUTOR (AI)" : "LOCAL 2-PLAYER";
                 
@@ -2926,6 +3034,7 @@
             shockwavePillars = [];
             lightningStrikes = [];
             killcam.active = false; // 이전 매치 킬캠 상태 클린업
+            gameState.finalizing = false;
             shakeFrames = 0;
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
 
