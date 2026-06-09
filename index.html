@@ -1139,7 +1139,15 @@
 
             draw() {
                 bCtx.save();
-                
+
+                // 캐릭터 전체(몸·바이저·무기·스카프)를 발 기준으로 균일 확대 — 비율 유지하며 조금 더 크게
+                const charScale = 1.25;
+                const cx = this.x + this.width / 2;
+                const cy = this.y + this.height; // 발 위치 기준으로 스케일
+                bCtx.translate(cx, cy);
+                bCtx.scale(charScale, charScale);
+                bCtx.translate(-cx, -cy);
+
                 const themeColor = (this.id === 1) ? '#06b6d4' : '#f43f5e';
                 const weaponColor = this.wepStats.color;
                 
