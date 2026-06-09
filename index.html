@@ -477,6 +477,12 @@
 
         <!-- ================= BATTLE ARENA (CANVAS FIGHT) SCREEN ================= -->
         <div id="screenBattle" class="hidden flex-1 flex flex-col justify-between relative">
+            <!-- 라운드 스코어보드 (2선승제) -->
+            <div class="flex items-center justify-center gap-3 pb-1.5">
+                <div id="scoreP1Pips" class="flex gap-1.5"></div>
+                <span id="roundLabel" class="text-[11px] font-orbitron text-slate-400 tracking-[0.2em] px-2">ROUND 1</span>
+                <div id="scoreP2Pips" class="flex gap-1.5"></div>
+            </div>
             <!-- HUD -->
             <div class="grid grid-cols-2 gap-6 border-b border-slate-800 pb-3 z-10">
                 <!-- P1 HUD -->
@@ -672,9 +678,14 @@
             selectingPlayer: 1,
             isArenaRunning: false,
             combatLive: false, // 카운트다운 종료(FIGHT!) 후에만 입력/충돌 활성화
-            finalizing: false, // 결과 전환 진행 중 (중복 방지)
+            finalizing: false, // 라운드 종료 처리 중 (중복 방지)
+            scoreP1: 0,        // P1 라운드 승수
+            scoreP2: 0,        // P2 라운드 승수
+            round: 1,          // 현재 라운드 번호
             winner: ''
         };
+
+        const WINS_NEEDED = 2; // 2선승제 (먼저 2라운드 획득 시 매치 승리)
 
         const BASE_PLATFORMS = [
             { x: 150, y: 300, w: 200, h: 10, color: 'rgba(6, 182, 212, 0.4)' },
@@ -2936,12 +2947,20 @@
             }
         }
 
+        // 라운드 종료 처리 — 승점 반영 후, 2선승 도달이면 매치 종료 / 아니면 다음 라운드
         function finalizeBattle(winnerFighter) {
-            if (gameState.finalizing) return; // 한 번만 실행 (중복 결과 전환 방지)
+            if (gameState.finalizing) return; // 라운드당 한 번만
             gameState.finalizing = true;
             gameState.combatLive = false;
 
-            playSound('victory');
+            // 라운드 승점 반영
+            if (winnerFighter.id === 1) gameState.scoreP1++;
+            else gameState.scoreP2++;
+            updateScoreUI();
+
+            const matchOver = (gameState.scoreP1 >= WINS_NEEDED || gameState.scoreP2 >= WINS_NEEDED);
+
+            playSound(matchOver ? 'victory' : 'ko');
             haptic([0, 70, 50, 70]);
 
             const flashColor = winnerFighter.wepStats.color;
@@ -2953,28 +2972,52 @@
                 ));
             }
 
-            // 루프는 잠시 더 돌려 파편(산산조각) 애니메이션을 보여준 뒤 결과 화면으로
+            showRoundBanner(winnerFighter, matchOver);
+
+            // 루프를 잠시 더 돌려 파편/킬캠을 보여준 뒤 → 매치 종료면 결과, 아니면 다음 라운드
             setTimeout(() => {
                 gameState.isArenaRunning = false;
                 killcam.active = false;
                 if (gameLoopId) cancelAnimationFrame(gameLoopId);
-                document.getElementById('resWinnerName').textContent = winnerFighter.name;
-                document.getElementById('resMatchMode').textContent = (gameState.gameMode === 'AI') ? "VS COMPUTOR (AI)" : "LOCAL 2-PLAYER";
-                
-                const title = document.getElementById('resultTitle');
-                const desc = document.getElementById('resultDescription');
 
-                title.textContent = `${winnerFighter.name} WIN!`;
-                if (winnerFighter.id === 1) {
-                    title.className = "text-5xl font-black font-orbitron tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 neon-text-cyan animate-pulse";
-                    desc.textContent = "눈부신 아케이드 손기술과 무기 무빙 전략으로 사이버 아레나 최후의 군주가 되었습니다!";
+                if (matchOver) {
+                    document.getElementById('resWinnerName').textContent = winnerFighter.name;
+                    document.getElementById('resMatchMode').textContent = (gameState.gameMode === 'AI') ? "VS COMPUTOR (AI)" : "LOCAL 2-PLAYER";
+
+                    const title = document.getElementById('resultTitle');
+                    const desc = document.getElementById('resultDescription');
+                    const score = `최종 스코어 ${gameState.scoreP1} : ${gameState.scoreP2}. `;
+
+                    title.textContent = `${winnerFighter.name} WIN!`;
+                    if (winnerFighter.id === 1) {
+                        title.className = "text-5xl font-black font-orbitron tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400 neon-text-cyan animate-pulse";
+                        desc.textContent = score + "눈부신 아케이드 손기술과 무기 무빙 전략으로 사이버 아레나 최후의 군주가 되었습니다!";
+                    } else {
+                        title.className = "text-5xl font-black font-orbitron tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-600 neon-text-pink animate-pulse";
+                        desc.textContent = score + "상대 닌자의 영리한 지형 돌파와 완벽한 참격에 시스템 바디가 관통당했습니다.";
+                    }
+
+                    changeScreen('RESULT');
                 } else {
-                    title.className = "text-5xl font-black font-orbitron tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-600 neon-text-pink animate-pulse";
-                    desc.textContent = "상대 닌자의 영리한 지형 돌파와 완벽한 참격에 시스템 바디가 관통당했습니다.";
+                    // 다음 라운드 개시 (점수/맵/무기/모드는 유지)
+                    gameState.round++;
+                    gameState.finalizing = false;
+                    startRound();
                 }
+            }, 1600);
+        }
 
-                changeScreen('RESULT');
-            }, 1200);
+        // 라운드 종료 배너 (연출을 가리지 않게 투명 오버레이로 표시)
+        function showRoundBanner(winner, matchOver) {
+            const overlay = document.getElementById('battleOverlay');
+            const cdText = document.getElementById('countdownText');
+            const cdDesc = document.getElementById('countdownDesc');
+            overlay.style.background = 'transparent';
+            overlay.style.backdropFilter = 'none';
+            overlay.style.opacity = '1';
+            cdText.textContent = matchOver ? 'MATCH!' : `ROUND ${gameState.round}`;
+            cdText.style.color = (winner.id === 1) ? '#22d3ee' : '#f43f5e';
+            cdDesc.textContent = `${winner.name} 라운드 획득   ●   ${gameState.scoreP1} : ${gameState.scoreP2}`;
         }
 
         // ================= 9. 누락 복원: 대시 / HUD 갱신 / 전장 초기화 =================
@@ -3030,9 +3073,31 @@
             });
         }
 
-        // 전장 초기화 오케스트레이터: 파이터 생성 → HUD 세팅 → 카운트다운 → 아레나 가동
+        // 상단 라운드 스코어보드 갱신 (획득 라운드만큼 핍 점등)
+        function updateScoreUI() {
+            const pips = (won, color) => Array.from({ length: WINS_NEEDED }, (_, i) =>
+                `<span class="inline-block w-3 h-3 rounded-full ${i < won ? color : 'bg-slate-700 border border-slate-600'}"></span>`
+            ).join('');
+            const p1El = document.getElementById('scoreP1Pips');
+            const p2El = document.getElementById('scoreP2Pips');
+            const rEl = document.getElementById('roundLabel');
+            if (p1El) p1El.innerHTML = pips(gameState.scoreP1, 'bg-cyan-400 shadow-[0_0_7px_rgba(6,182,212,0.9)]');
+            if (p2El) p2El.innerHTML = pips(gameState.scoreP2, 'bg-pink-500 shadow-[0_0_7px_rgba(244,63,94,0.9)]');
+            if (rEl) rEl.textContent = `ROUND ${gameState.round}`;
+        }
+
+        // 매치 시작: 라운드 점수 초기화 후 1라운드 개시
         function initBattleField() {
-            // 이전 매치 잔존 객체 클린업
+            gameState.scoreP1 = 0;
+            gameState.scoreP2 = 0;
+            gameState.round = 1;
+            updateScoreUI();
+            startRound();
+        }
+
+        // 한 라운드 셋업: 파이터 생성 → HUD/스코어 → 카운트다운 → 아레나 가동
+        function startRound() {
+            // 이전 라운드 잔존 객체 클린업
             projectiles = [];
             battleParticles = [];
             floatingTexts = [];
@@ -3072,6 +3137,7 @@
             document.getElementById('hudP2Weapon').textContent = weaponStats[gameState.p2Weapon].name;
 
             updateHUD();
+            updateScoreUI();
 
             // BATTLE 화면 전환
             changeScreen('BATTLE');
@@ -3080,12 +3146,15 @@
             const overlay = document.getElementById('battleOverlay');
             const cdText = document.getElementById('countdownText');
             const cdDesc = document.getElementById('countdownDesc');
+            overlay.style.background = '';        // 라운드 배너에서 바꾼 스타일 복원
+            overlay.style.backdropFilter = '';
+            cdText.style.color = '';
             overlay.style.opacity = '1';
             overlay.style.pointerEvents = 'none';
 
             const sequence = ['3', '2', '1', 'FIGHT!'];
             cdText.textContent = 'READY';
-            cdDesc.textContent = 'ROUND 1 - ARENA UNLOCKED';
+            cdDesc.textContent = `ROUND ${gameState.round} - ARENA UNLOCKED`;
 
             // 카운트다운 동안에도 배경/파이터가 보이도록 루프 미리 가동 (입력/충돌은 잠금)
             gameState.isArenaRunning = true;
