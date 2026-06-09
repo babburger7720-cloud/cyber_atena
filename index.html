@@ -404,7 +404,7 @@
 
             <!-- 실시간 게임 캔버스 영역 -->
             <div class="relative flex-1 bg-slate-950/60 rounded-xl my-3 border border-slate-800 overflow-hidden flex items-center justify-center shadow-inner">
-                <canvas id="battleCanvas" width="800" height="360" class="w-full h-full object-contain"></canvas>
+                <canvas id="battleCanvas" width="1100" height="460" class="w-full h-full object-contain"></canvas>
                 
                 <!-- Countdown Overlay -->
                 <div id="battleOverlay" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/40 backdrop-blur-sm transition-opacity duration-300">
@@ -476,7 +476,7 @@
                 name: 'PLASMA BOW',
                 color: '#f43f5e',
                 damage: 6,      // 활 기본 대미지 6 고정
-                speed: 23,      // 발사 쿨다운 — 공격속도 0.8배 (18 → 23)
+                speed: 28,      // 발사 쿨다운 — 공격속도 0.65배 (기준 18 ÷ 0.65 ≈ 28)
                 reach: 0,       
                 height: 10,
                 moveSpeed: 3.8,
@@ -526,9 +526,9 @@
         };
 
         const platforms = [
-            { x: 100, y: 220, w: 140, h: 10, color: 'rgba(6, 182, 212, 0.4)' }, 
-            { x: 560, y: 220, w: 140, h: 10, color: 'rgba(244, 63, 94, 0.4)' }, 
-            { x: 310, y: 140, w: 180, h: 10, color: 'rgba(168, 85, 247, 0.4)' }  
+            { x: 150, y: 300, w: 200, h: 10, color: 'rgba(6, 182, 212, 0.4)' },
+            { x: 750, y: 300, w: 200, h: 10, color: 'rgba(244, 63, 94, 0.4)' },
+            { x: 450, y: 195, w: 200, h: 10, color: 'rgba(168, 85, 247, 0.4)' }
         ];
 
         const keys = {
@@ -964,6 +964,7 @@
 
                 this.dashCooldown = 0;
                 this.dashFrames = 0; // 대시 추진 지속 프레임 — 이 동안 이동 입력이 vx를 덮어쓰지 않음
+                this.attackHeld = false; // 공격키 누름 상태 — 꾹 누르고 있는 동안 연속 공격 방지
 
                 this.scarfHistory = [];
                 for (let i = 0; i < 8; i++) {
@@ -1848,9 +1849,10 @@
                 p1.jump();
                 keys.KeyW = false;
             }
-            if (keys.KeyF) {
+            if (keys.KeyF && !p1.attackHeld) {
                 p1.attack();
             }
+            p1.attackHeld = keys.KeyF; // 키를 떼야 다음 공격 가능 (꾹 누름 연사 차단)
             if (keys.KeyG) {
                 p1.startShield();
             } else {
@@ -1872,9 +1874,10 @@
                     p2.jump();
                     keys.ArrowUp = false;
                 }
-                if (keys.KeyK) {
+                if (keys.KeyK && !p2.attackHeld) {
                     p2.attack();
                 }
+                p2.attackHeld = keys.KeyK; // 키를 떼야 다음 공격 가능 (꾹 누름 연사 차단)
                 if (keys.KeyL) {
                     p2.startShield();
                 } else {
@@ -1981,8 +1984,8 @@
             if (fighter.shieldStun > 0 || fighter.dashCooldown > 0) return;
 
             fighter.direction = dir;
-            fighter.vx = dir * fighter.wepStats.moveSpeed * 4.2; // 순간 가속 추진
-            fighter.dashFrames = 8; // 대시 추진이 이동 입력에 덮어써지지 않도록 보호
+            fighter.vx = dir * fighter.wepStats.moveSpeed * 5.2; // 순간 가속 추진 (거리 증가)
+            fighter.dashFrames = 10; // 대시 추진이 이동 입력에 덮어써지지 않도록 보호
             fighter.dashCooldown = 45; // 약 0.75초 재사용 대기
 
             playSound('dash');
