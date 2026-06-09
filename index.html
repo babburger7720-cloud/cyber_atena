@@ -710,10 +710,14 @@
         const LAVA_DAMAGE = 5;       // 용암: 닿는 순간 1회 데미지 (+위로 튕김)
 
         // 킬캠(슬로모션 줌 하이라이트) 상태 & 튜닝
-        const KILLCAM_DURATION = 110; // 킬캠 총 길이(실프레임, 약 1.8초)
+        const KILLCAM_DURATION = 150; // 킬캠 총 길이(실프레임). 느린 만큼 길게
         const KILLCAM_ZOOM = 2.4;     // 패배자 클로즈업 줌 배율
         const KILLCAM_BAR = 56;       // 상하 레터박스 바 높이(px)
-        let killcam = { active: false, timer: 0, frame: 0, zoom: 1, bar: 0, winner: null, loser: null };
+        const KILLCAM_TIMESCALE = 0.32; // 킬캠 슬로모션 배속 (낮을수록 느림, 매 프레임 갱신이라 부드러움)
+        let killcam = { active: false, timer: 0, frame: 0, zoom: 1, bar: 0, ts: 1, winner: null, loser: null };
+
+        // 전역 시간 배속 — 평소 1, 킬캠 중에는 느려짐. 각 엔티티가 이동량에 곱해 부드러운 슬로모션 구현
+        let timeScale = 1;
 
         const keys = {
             KeyA: false, KeyD: false, KeyW: false, KeyF: false, KeyG: false, KeyE: false,
@@ -1006,10 +1010,10 @@
                 this.size = Math.random() * 3 + 1;
             }
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += 0.15; 
-                this.alpha -= 0.03;
+                this.x += this.vx * timeScale;
+                this.y += this.vy * timeScale;
+                this.vy += 0.15 * timeScale;
+                this.alpha -= 0.03 * timeScale;
             }
             draw() {
                 bCtx.save();
@@ -1050,12 +1054,12 @@
                 }
             }
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += 0.4;     // 중력
-                this.vx *= 0.99;
-                this.rot += this.vr;
-                this.life--;
+                this.x += this.vx * timeScale;
+                this.y += this.vy * timeScale;
+                this.vy += 0.4 * timeScale;     // 중력
+                this.vx *= Math.pow(0.99, timeScale);
+                this.rot += this.vr * timeScale;
+                this.life -= timeScale;
                 this.alpha = Math.max(0, this.life / this.maxLife);
                 const floorY = bCanvas.height - 40;
                 if (this.y > floorY) { // 바닥 튕김
@@ -1095,11 +1099,11 @@
                 this.maxLife = 45;
             }
             update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy *= 0.98; 
-                this.alpha = this.life / this.maxLife; 
-                this.life--;
+                this.x += this.vx * timeScale;
+                this.y += this.vy * timeScale;
+                this.vy *= Math.pow(0.98, timeScale);
+                this.alpha = this.life / this.maxLife;
+                this.life -= timeScale;
             }
             draw() {
                 bCtx.save();
@@ -1232,7 +1236,7 @@
                 this.critMultiplier = critMultiplier;
             }
             update() {
-                this.x += this.vx;
+                this.x += this.vx * timeScale;
                 if (this.x < 0 || this.x > bCanvas.width) {
                     this.active = false;
                 }
@@ -1275,7 +1279,7 @@
                 this.spawnFrame++;
                 this.trail.unshift({ x: this.x, y: this.y });
                 if (this.trail.length > 7) this.trail.pop();
-                this.x += this.vx;
+                this.x += this.vx * timeScale;
                 if (element_offscreen(this)) this.active = false;
             }
             draw() {
@@ -1557,11 +1561,11 @@
                     }
                 }
 
-                this.vy += this.gravity;
-                this.x += this.vx;
-                this.y += this.vy;
-                
-                this.vx *= 0.82;
+                this.vy += this.gravity * timeScale;
+                this.x += this.vx * timeScale;
+                this.y += this.vy * timeScale;
+
+                this.vx *= Math.pow(0.82, timeScale); // 마찰을 배속에 맞게 시간보정
 
                 this.isGrounded = false;
 
@@ -1576,7 +1580,7 @@
                 if (this.vy >= 0) {
                     platforms.forEach(plat => {
                         const feetY = this.y + this.height;
-                        const prevFeetY = feetY - this.vy; 
+                        const prevFeetY = feetY - this.vy * timeScale;
                         
                         if (prevFeetY <= plat.y + 5 && feetY >= plat.y) {
                             if (this.x + this.width > plat.x && this.x < plat.x + plat.w) {
@@ -2625,18 +2629,20 @@
         function gameArenaLoop() {
             if (!gameState.isArenaRunning) return;
 
-            // 킬캠 진행: 줌·레터박스 보간 + 타이머. 종료 시 결과 전환을 예약하되 줌/오버레이는 유지
+            // 킬캠 진행: 줌·레터박스·슬로모션 배속 보간 + 타이머
             if (killcam.active) {
                 killcam.frame++;
+                killcam.ts += (KILLCAM_TIMESCALE - killcam.ts) * 0.12; // 슬로모션으로 부드럽게 진입
                 if (killcam.timer > 0) {
                     killcam.timer--;
                     killcam.zoom += (KILLCAM_ZOOM - killcam.zoom) * 0.1;
                     killcam.bar += (KILLCAM_BAR - killcam.bar) * 0.18;
                     if (killcam.timer === 0) finalizeBattle(killcam.winner); // finalizing 가드로 1회만
                 }
+                timeScale = killcam.ts;
+            } else {
+                timeScale = 1;
             }
-            // 슬로모션: 킬캠 중에는 2프레임에 1번만 물리/엔티티 갱신 (0.5배속, 더 부드럽게)
-            const advance = !killcam.active || (killcam.frame % 2 === 0);
 
             bCtx.save();
             if (shakeFrames > 0) {
@@ -2758,14 +2764,12 @@
             }
             } // end combatLive gate
 
-            if (advance) {
-                p1.update();
-                p2.update();
-            }
+            p1.update();
+            p2.update();
 
             for (let i = projectiles.length - 1; i >= 0; i--) {
                 const proj = projectiles[i];
-                if (advance) proj.update();
+                proj.update();
                 if (!proj.active) {
                     projectiles.splice(i, 1);
                 } else {
@@ -2786,7 +2790,7 @@
             // 마법사 낙뢰: 텔레그래프 → 낙뢰 → 섬광 소멸 (충돌 판정 전에 갱신해 justStruck 동기화)
             for (let i = lightningStrikes.length - 1; i >= 0; i--) {
                 const strike = lightningStrikes[i];
-                if (advance) strike.update();
+                strike.update();
                 strike.draw();
                 if (strike.struck && strike.flash <= 0) {
                     lightningStrikes.splice(i, 1);
@@ -2799,7 +2803,7 @@
             }
 
             for (let i = battleParticles.length - 1; i >= 0; i--) {
-                if (advance) battleParticles[i].update();
+                battleParticles[i].update();
                 battleParticles[i].draw();
                 if (battleParticles[i].alpha <= 0) {
                     battleParticles.splice(i, 1);
@@ -2807,7 +2811,7 @@
             }
 
             for (let i = floatingTexts.length - 1; i >= 0; i--) {
-                if (advance) floatingTexts[i].update();
+                floatingTexts[i].update();
                 floatingTexts[i].draw();
                 if (floatingTexts[i].life <= 0) {
                     floatingTexts.splice(i, 1);
@@ -2915,6 +2919,7 @@
             killcam.timer = KILLCAM_DURATION;
             killcam.zoom = 1.2;
             killcam.bar = 0;
+            killcam.ts = 1; // 1배속에서 시작해 슬로모션으로 부드럽게 진입
             killcam.winner = winnerFighter;
             killcam.loser = (winnerFighter === p1) ? p2 : p1;
             shakeFrames = 22;
@@ -3034,6 +3039,8 @@
             shockwavePillars = [];
             lightningStrikes = [];
             killcam.active = false; // 이전 매치 킬캠 상태 클린업
+            killcam.ts = 1;
+            timeScale = 1;
             gameState.finalizing = false;
             shakeFrames = 0;
             if (gameLoopId) cancelAnimationFrame(gameLoopId);
