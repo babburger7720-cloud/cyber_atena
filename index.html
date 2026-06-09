@@ -2404,7 +2404,8 @@
                 if (touchingSpike && !f.inSpike) {
                     f.inSpike = true;
                     applyHazardDamage(f, SPIKE_DAMAGE, '#f87171', 'spike');
-                    f.vx = (f.x < bCanvas.width / 2 ? 1 : -1) * 4; // 가시에서 살짝 밀려남
+                    f.vx = (f.x < bCanvas.width / 2 ? 1 : -1) * 7; // 가시에서 벽 반대쪽으로 튕겨남
+                    f.vy = -5; // 살짝 위로 튕김
                 } else if (!touchingSpike) {
                     f.inSpike = false;
                 }
@@ -2780,8 +2781,8 @@
                 hazardSpikes.push({ side: 'right', x: bCanvas.width - 15 - SPIKE_WIDTH, y: 0, w: SPIKE_WIDTH, h: floorY });
             }
             if (selMap.lava) {
-                const lw = 100; // 중앙 보라 발판(200)의 절반 크기
-                hazardLava = { x: bCanvas.width / 2 - lw / 2, y: floorY - 8, w: lw, h: 34 };
+                const lw = 132; // 중앙 용암 폭 (조금 키움)
+                hazardLava = { x: bCanvas.width / 2 - lw / 2, y: floorY - 10, w: lw, h: 40 };
             }
 
             // 좌측: P1 / 우측: P2 스폰
