@@ -218,6 +218,61 @@
             </button>
         </div>
 
+        <!-- ================= MAP SELECT SCREEN ================= -->
+        <div id="screenMap" class="hidden flex-1 flex flex-col justify-between">
+            <div class="text-center space-y-1">
+                <h2 class="text-2xl font-black font-orbitron tracking-wider text-fuchsia-400">SELECT ARENA</h2>
+                <p class="text-slate-400 text-xs">전투를 펼칠 전장을 먼저 선택하세요 — 무기 선택은 그 다음입니다.</p>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 my-auto px-4 max-w-3xl mx-auto w-full">
+                <!-- Map 1: Neon Arena -->
+                <div id="map-arena" class="map-card group relative bg-slate-900/60 border-2 border-slate-800 rounded-2xl p-4 flex flex-col items-center text-center cursor-pointer transition-all duration-300 hover:border-cyan-400 hover:bg-slate-900/95 transform hover:-translate-y-1">
+                    <div class="absolute top-2.5 right-2.5 px-1.5 py-0.5 bg-cyan-500/20 text-cyan-400 text-[9px] rounded border border-cyan-500/30 font-bold font-orbitron">CLASSIC</div>
+                    <svg class="w-full h-28" viewBox="0 0 220 110" preserveAspectRatio="xMidYMid meet">
+                        <rect x="2" y="2" width="216" height="106" rx="8" fill="#0b1020" stroke="#1e293b" stroke-width="2"/>
+                        <line x1="8" y1="96" x2="212" y2="96" stroke="#4f46e5" stroke-width="3"/>
+                        <rect x="32" y="70" width="44" height="6" rx="3" fill="#06b6d4" opacity="0.6"/>
+                        <rect x="144" y="70" width="44" height="6" rx="3" fill="#f43f5e" opacity="0.6"/>
+                        <rect x="92" y="44" width="44" height="6" rx="3" fill="#a855f7" opacity="0.6"/>
+                    </svg>
+                    <div class="mt-2 w-full">
+                        <h3 class="text-lg font-black font-orbitron text-cyan-400">NEON ARENA</h3>
+                        <p class="text-[10px] text-slate-400">장애물 없는 클래식 아레나. 순수 실력 대결.</p>
+                    </div>
+                </div>
+
+                <!-- Map 2: Hazard Zone -->
+                <div id="map-hazard" class="map-card group relative bg-slate-900/60 border-2 border-slate-800 rounded-2xl p-4 flex flex-col items-center text-center cursor-pointer transition-all duration-300 hover:border-rose-400 hover:bg-slate-900/95 transform hover:-translate-y-1">
+                    <div class="absolute top-2.5 right-2.5 px-1.5 py-0.5 bg-rose-500/20 text-rose-300 text-[9px] rounded border border-rose-500/30 font-bold font-orbitron">DANGER</div>
+                    <svg class="w-full h-28" viewBox="0 0 220 110" preserveAspectRatio="xMidYMid meet">
+                        <rect x="2" y="2" width="216" height="106" rx="8" fill="#0b1020" stroke="#3f1d2e" stroke-width="2"/>
+                        <line x1="8" y1="96" x2="212" y2="96" stroke="#4f46e5" stroke-width="3"/>
+                        <rect x="32" y="70" width="44" height="6" rx="3" fill="#06b6d4" opacity="0.6"/>
+                        <rect x="144" y="70" width="44" height="6" rx="3" fill="#f43f5e" opacity="0.6"/>
+                        <rect x="92" y="44" width="44" height="6" rx="3" fill="#a855f7" opacity="0.6"/>
+                        <!-- wall spikes -->
+                        <g fill="#475569" stroke="#f87171" stroke-width="1">
+                            <path d="M8 14 L18 20 L8 26 Z"/><path d="M8 30 L18 36 L8 42 Z"/><path d="M8 46 L18 52 L8 58 Z"/><path d="M8 62 L18 68 L8 74 Z"/><path d="M8 78 L18 84 L8 90 Z"/>
+                            <path d="M212 14 L202 20 L212 26 Z"/><path d="M212 30 L202 36 L212 42 Z"/><path d="M212 46 L202 52 L212 58 Z"/><path d="M212 62 L202 68 L212 74 Z"/><path d="M212 78 L202 84 L212 90 Z"/>
+                        </g>
+                        <!-- center lava -->
+                        <rect x="98" y="86" width="24" height="10" rx="3" fill="#a855f7"/>
+                        <rect x="98" y="86" width="24" height="3" rx="1.5" fill="#e9d5ff"/>
+                    </svg>
+                    <div class="mt-2 w-full">
+                        <h3 class="text-lg font-black font-orbitron text-rose-300">HAZARD ZONE</h3>
+                        <p class="text-[10px] text-slate-400">양쪽 벽 <b class="text-rose-300">가시(5뎀)</b> + 중앙 <b class="text-purple-300">용암</b>. 넉백 주의!</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center px-4">
+                <button id="btnMapBackMain" class="text-slate-400 hover:text-white font-orbitron font-bold text-sm transition-colors">← MAIN</button>
+                <button id="btnConfirmMap" class="px-8 py-3 bg-gradient-to-r from-fuchsia-600 to-pink-600 rounded-lg opacity-50 cursor-not-allowed font-orbitron font-bold text-sm tracking-wider" disabled>CONFIRM ARENA →</button>
+            </div>
+        </div>
+
         <!-- ================= WEAPON SELECT SCREEN ================= -->
         <div id="screenSelect" class="hidden flex-1 flex flex-col justify-between">
             <div class="text-center space-y-1">
@@ -354,7 +409,7 @@
 
             <!-- Selection Navigation Footer Buttons -->
             <div class="flex justify-between items-center px-4">
-                <button id="btnBackToMain" class="text-slate-400 hover:text-white font-orbitron font-bold text-sm transition-colors">← MAIN</button>
+                <button id="btnBackToMain" class="text-slate-400 hover:text-white font-orbitron font-bold text-sm transition-colors">← ARENA</button>
                 <button id="btnConfirmWeapon" class="px-8 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-lg opacity-50 cursor-not-allowed font-orbitron font-bold text-sm tracking-wider" disabled>CONFIRM WEAPON</button>
             </div>
         </div>
@@ -554,7 +609,7 @@
         const BURN_DURATION = 180;      // 화상 총 지속(프레임, 3초)
         const BURN_TICK_INTERVAL = 60;  // 화상 틱 간격(프레임, 1초)
         const BURN_TICK_DMG = 2;        // 화상 틱당 데미지 (초당 2 → 총 6)
-        const LIGHTNING_DELAY = 120;    // 전기: 시전 후 번개 낙뢰까지 지연(프레임, 약 2초)
+        const LIGHTNING_DELAY = 108;    // 전기: 시전 후 번개 낙뢰까지 지연(프레임, 약 1.8초 — 0.2초 더 빠르게)
         const LIGHTNING_WIDTH = 76;     // 낙뢰 적중 폭(px)
         const LIGHTNING_DAMAGE = 20;
 
@@ -582,17 +637,45 @@
             p2Name: 'CYBER_BOT',
             p1Weapon: '',
             p2Weapon: '',
+            mapId: 'arena',   // 선택한 전장 (arena | hazard)
             selectingPlayer: 1,
             isArenaRunning: false,
             combatLive: false, // 카운트다운 종료(FIGHT!) 후에만 입력/충돌 활성화
             winner: ''
         };
 
-        const platforms = [
+        const BASE_PLATFORMS = [
             { x: 150, y: 300, w: 200, h: 10, color: 'rgba(6, 182, 212, 0.4)' },
             { x: 750, y: 300, w: 200, h: 10, color: 'rgba(244, 63, 94, 0.4)' },
             { x: 450, y: 195, w: 200, h: 10, color: 'rgba(168, 85, 247, 0.4)' }
         ];
+
+        // ===== 전장(맵) 정의 — 무기 선택 전에 고르는 아레나 =====
+        const maps = {
+            arena: {
+                name: 'NEON ARENA',
+                desc: '장애물이 없는 클래식 아레나. 순수 실력 대결.',
+                platforms: BASE_PLATFORMS,
+                spikes: false,
+                lava: false
+            },
+            hazard: {
+                name: 'HAZARD ZONE',
+                desc: '양쪽 벽 가시 + 중앙 용암. 넉백에 밀려 함정에 닿지 않게 주의!',
+                platforms: BASE_PLATFORMS,
+                spikes: true,
+                lava: true
+            }
+        };
+
+        let platforms = maps.arena.platforms; // 현재 전장 발판 (initBattleField에서 갱신)
+        let hazardSpikes = [];   // 벽 가시 영역들 {side, x, y, w, h}
+        let hazardLava = null;   // 중앙 용암 {x, y, w, h}
+
+        // 위험지대 튜닝 상수
+        const SPIKE_DAMAGE = 5;      // 가시: 닿는 순간 1회 데미지
+        const SPIKE_WIDTH = 22;      // 벽에서 돌출되는 가시 영역 폭(px)
+        const LAVA_DAMAGE = 5;       // 용암: 닿는 순간 1회 데미지 (+위로 튕김)
 
         const keys = {
             KeyA: false, KeyD: false, KeyW: false, KeyF: false, KeyG: false, KeyE: false,
@@ -1269,6 +1352,10 @@
                 this.burnTimer = 0;        // 화상 잔여 프레임
                 this.burnTickTimer = 0;    // 다음 화상 틱까지 프레임
                 this.burnSource = null;    // 화상 가한 주체 (KO 귀속용)
+
+                // 위험지대(가시/용암) 처리용 — 둘 다 닿을 때만 1회 (디바운스 플래그)
+                this.inSpike = false;
+                this.inLava = false;
 
                 this.scarfHistory = [];
                 for (let i = 0; i < 8; i++) {
@@ -2287,6 +2374,126 @@
             }
         }
 
+        // 위험지대(가시/용암) 데미지 적용 — 환경 KO 시 상대가 승자
+        function applyHazardDamage(victim, amount, color, kind) {
+            victim.hp = Math.max(0, victim.hp - amount);
+            floatingTexts.push(new FloatingText(victim.x + victim.width / 2, victim.y, `${amount}`, false, color));
+            for (let i = 0; i < 10; i++) {
+                battleParticles.push(new CombatSpark(victim.x + victim.width / 2, victim.y + victim.height / 2, color));
+            }
+            shakeFrames = Math.max(shakeFrames, 8);
+            playSound(kind === 'lava' ? 'cast_fire' : 'hit');
+            haptic(25);
+            updateHUD();
+            if (victim.hp <= 0) {
+                finishBattle((victim === p1) ? p2 : p1);
+            }
+        }
+
+        // 매 프레임 위험지대 충돌 검사
+        function checkHazards() {
+            [p1, p2].forEach(f => {
+                if (!f || !gameState.combatLive) return; // 한쪽이 KO되면 즉시 중단(중복 finishBattle 방지)
+                const fr = { x: f.x, y: f.y, w: f.width, h: f.height };
+
+                // 벽 가시: 닿는 "순간"에만 1회 데미지 (떨어졌다 다시 닿아야 재적용)
+                let touchingSpike = false;
+                for (const s of hazardSpikes) {
+                    if (isIntersecting(fr, { x: s.x, y: s.y, w: s.w, h: s.h })) { touchingSpike = true; break; }
+                }
+                if (touchingSpike && !f.inSpike) {
+                    f.inSpike = true;
+                    applyHazardDamage(f, SPIKE_DAMAGE, '#f87171', 'spike');
+                    f.vx = (f.x < bCanvas.width / 2 ? 1 : -1) * 4; // 가시에서 살짝 밀려남
+                } else if (!touchingSpike) {
+                    f.inSpike = false;
+                }
+
+                // 중앙 용암: 닿는 "순간"에만 1회 데미지 + 위로 튕겨냄
+                if (hazardLava && isIntersecting(fr, hazardLava)) {
+                    if (!f.inLava) {
+                        f.inLava = true;
+                        applyHazardDamage(f, LAVA_DAMAGE, '#c084fc', 'lava');
+                        f.vy = -7; // 용암에 닿으면 위로 튕겨오름
+                    }
+                } else {
+                    f.inLava = false;
+                }
+            });
+        }
+
+        // 위험지대 렌더 (가시 + 용암)
+        function drawHazards() {
+            const t = Date.now();
+            // 벽 가시
+            hazardSpikes.forEach(s => {
+                const pointRight = s.side === 'left'; // 왼쪽 벽 가시는 오른쪽(안쪽)을 향함
+                const baseX = pointRight ? s.x : s.x + s.w;
+                const tipX = pointRight ? s.x + s.w : s.x;
+                const tooth = 26;
+                bCtx.save();
+                bCtx.fillStyle = '#475569';
+                bCtx.strokeStyle = '#f87171';
+                bCtx.lineWidth = 1.5;
+                bCtx.shadowColor = '#ef4444';
+                bCtx.shadowBlur = 8;
+                for (let y = 6; y + tooth < s.h; y += tooth) {
+                    bCtx.beginPath();
+                    bCtx.moveTo(baseX, y);
+                    bCtx.lineTo(tipX, y + tooth / 2);
+                    bCtx.lineTo(baseX, y + tooth);
+                    bCtx.closePath();
+                    bCtx.fill();
+                    bCtx.stroke();
+                }
+                // 벽 베이스 라인
+                bCtx.fillStyle = 'rgba(71, 85, 105, 0.5)';
+                bCtx.fillRect(pointRight ? s.x - 2 : s.x + s.w - 4, 0, 6, s.h);
+                bCtx.restore();
+            });
+
+            // 중앙 용암 풀
+            if (hazardLava) {
+                const L = hazardLava;
+                bCtx.save();
+                const glow = 0.6 + Math.sin(t / 200) * 0.2;
+                bCtx.shadowColor = '#a855f7';
+                bCtx.shadowBlur = 25 * glow;
+                const grad = bCtx.createLinearGradient(0, L.y, 0, L.y + L.h);
+                grad.addColorStop(0, '#e9d5ff');
+                grad.addColorStop(0.35, '#a855f7');
+                grad.addColorStop(1, '#581c87');
+                bCtx.fillStyle = grad;
+                // 출렁이는 표면
+                bCtx.beginPath();
+                bCtx.moveTo(L.x, L.y + 6);
+                const seg = 8;
+                for (let i = 0; i <= seg; i++) {
+                    const px = L.x + (L.w * i / seg);
+                    const py = L.y + 6 + Math.sin(t / 180 + i * 0.9) * 4;
+                    bCtx.lineTo(px, py);
+                }
+                bCtx.lineTo(L.x + L.w, L.y + L.h);
+                bCtx.lineTo(L.x, L.y + L.h);
+                bCtx.closePath();
+                bCtx.fill();
+
+                // 떠오르는 불씨 입자
+                bCtx.shadowBlur = 0;
+                for (let i = 0; i < 5; i++) {
+                    const bx = L.x + ((i * 53 + (t / 14)) % L.w);
+                    const phase = (t / 600 + i * 0.4) % 1;
+                    const by = L.y + 6 - phase * 22;
+                    bCtx.globalAlpha = 1 - phase;
+                    bCtx.fillStyle = i % 2 ? '#f0abfc' : '#facc15';
+                    bCtx.beginPath();
+                    bCtx.arc(bx, by, 1.8, 0, Math.PI * 2);
+                    bCtx.fill();
+                }
+                bCtx.restore();
+            }
+        }
+
         function gameArenaLoop() {
             if (!gameState.isArenaRunning) return;
 
@@ -2338,6 +2545,9 @@
             bCtx.lineTo(bCanvas.width, bCanvas.height - 40);
             bCtx.stroke();
             bCtx.shadowBlur = 0;
+
+            // 위험지대(가시/용암) 렌더 — 파이터 뒤에 깔림
+            drawHazards();
 
             if (gameState.combatLive) {
             if (p1.dashFrames <= 0) {
@@ -2426,7 +2636,10 @@
                 }
             }
 
-            if (gameState.combatLive) checkCollisions();
+            if (gameState.combatLive) {
+                checkCollisions();
+                checkHazards();
+            }
 
             for (let i = battleParticles.length - 1; i >= 0; i--) {
                 battleParticles[i].update();
@@ -2557,6 +2770,20 @@
 
             const floorY = bCanvas.height - 40;
 
+            // 선택한 전장(맵) 적용 — 발판 + 위험지대 구성
+            const selMap = maps[gameState.mapId] || maps.arena;
+            platforms = selMap.platforms;
+            hazardSpikes = [];
+            hazardLava = null;
+            if (selMap.spikes) {
+                hazardSpikes.push({ side: 'left',  x: 15, y: 0, w: SPIKE_WIDTH, h: floorY });
+                hazardSpikes.push({ side: 'right', x: bCanvas.width - 15 - SPIKE_WIDTH, y: 0, w: SPIKE_WIDTH, h: floorY });
+            }
+            if (selMap.lava) {
+                const lw = 100; // 중앙 보라 발판(200)의 절반 크기
+                hazardLava = { x: bCanvas.width / 2 - lw / 2, y: floorY - 8, w: lw, h: 34 };
+            }
+
             // 좌측: P1 / 우측: P2 스폰
             p1 = new Fighter(120, floorY - 64, 1, gameState.p1Name, gameState.p1Weapon);
             p2 = new Fighter(bCanvas.width - 120 - 32, floorY - 64, 2, gameState.p2Name, gameState.p2Weapon);
@@ -2639,6 +2866,33 @@
             });
         }
 
+        // ===== 전장(맵) 선택 처리 =====
+        function resetMapCards() {
+            document.querySelectorAll('.map-card').forEach(card => {
+                card.classList.remove('border-cyan-400', 'border-rose-400', 'shadow-[0_0_18px_rgba(6,182,212,0.4)]', 'shadow-[0_0_18px_rgba(244,63,94,0.4)]', 'scale-105');
+            });
+        }
+
+        function selectMap(mapId) {
+            playSound('select');
+            gameState.mapId = mapId;
+            resetMapCards();
+
+            const card = document.getElementById('map-' + mapId);
+            if (mapId === 'arena') card.classList.add('border-cyan-400', 'shadow-[0_0_18px_rgba(6,182,212,0.4)]', 'scale-105');
+            else card.classList.add('border-rose-400', 'shadow-[0_0_18px_rgba(244,63,94,0.4)]', 'scale-105');
+
+            const confirmBtn = document.getElementById('btnConfirmMap');
+            confirmBtn.disabled = false;
+            confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            confirmBtn.classList.add('hover:scale-105', 'active:scale-95');
+        }
+
+        function confirmMap() {
+            playSound('click');
+            changeScreen('SELECT');
+        }
+
         // 대시 및 대전 상대 로딩창으로 인도를 관할하는 오케스트레이터 정의 (안전 복원 완료!)
         function triggerMatchLoading() {
             changeScreen('MATCHMAKING');
@@ -2699,6 +2953,7 @@
             
             const screens = {
                 'MAIN': 'screenMain',
+                'MAP': 'screenMap',
                 'SELECT': 'screenSelect',
                 'MATCHMAKING': 'screenMatchmaking',
                 'BATTLE': 'screenBattle',
@@ -2723,8 +2978,13 @@
             if (screenId === 'MAIN') {
                 gameState.p1Weapon = '';
                 gameState.p2Weapon = '';
+                gameState.mapId = 'arena';
                 gameState.selectingPlayer = 1;
                 resetSelectionCards();
+                resetMapCards();
+                const confirmMapBtn = document.getElementById('btnConfirmMap');
+                confirmMapBtn.disabled = true;
+                confirmMapBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 document.getElementById('selectScreenTitle').textContent = "PLAYER 1: SELECT WEAPON";
                 document.getElementById('selectScreenTitle').className = "text-2xl font-black font-orbitron tracking-wider text-cyan-400";
                 const confirmBtn = document.getElementById('btnConfirmWeapon');
@@ -2838,9 +3098,15 @@
             document.getElementById('modeAiBtn').addEventListener('click', () => selectGameMode('AI'));
             document.getElementById('modePvpBtn').addEventListener('click', () => selectGameMode('PVP'));
 
-            document.getElementById('btnStartChooseWeapon').addEventListener('click', () => changeScreen('SELECT'));
-            document.getElementById('btnBackToMain').addEventListener('click', () => changeScreen('MAIN'));
+            document.getElementById('btnStartChooseWeapon').addEventListener('click', () => changeScreen('MAP'));
+            document.getElementById('btnBackToMain').addEventListener('click', () => changeScreen('MAP'));
             document.getElementById('btnConfirmWeapon').addEventListener('click', confirmWeaponSelection);
+
+            // 맵 선택 화면 바인딩
+            document.getElementById('map-arena').addEventListener('click', () => selectMap('arena'));
+            document.getElementById('map-hazard').addEventListener('click', () => selectMap('hazard'));
+            document.getElementById('btnConfirmMap').addEventListener('click', confirmMap);
+            document.getElementById('btnMapBackMain').addEventListener('click', () => changeScreen('MAIN'));
 
             document.getElementById('card-katana').addEventListener('click', () => selectWeapon('katana'));
             document.getElementById('card-bow').addEventListener('click', () => selectWeapon('bow'));
